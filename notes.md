@@ -6,4 +6,5 @@
 - `appsettings.json` configures the runtime of the app (logging, connection strings, etc.). Environment-specific overrides go in `appsettings.Development.json`
 - `Program.cs` is sort of like the rackup in Rails — it's the entry point that configures services, middleware, and routes, then starts the server
 - Routes can be defined inline on actions in controllers (via `[Route]` attributes) or in `Program.cs` (via `MapControllerRoute`). There's no separate routes file
+- View lookup is convention-based: `return View()` in `HomeController.Index()` renders `Views/Home/Index.cshtml`. No explicit wiring needed
 - No per-request logging by default. `UseHttpLogging()` enables it but it's verbose HTTP wire-level output, not concise Rails-style request logs
