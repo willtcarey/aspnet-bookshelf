@@ -1,0 +1,11 @@
+# Notes
+
+- ASP.NET MVC (`dotnet new mvc`) installs jQuery and Bootstrap by default
+- `Properties/launchSettings.json` configures how the app launches through Visual Studio. We use dip for that instead
+- `Bookshelf.csproj` is like a `tsconfig.json` or `package.json` — project configuration for development (target framework, compiler settings, package dependencies)
+- `appsettings.json` configures the runtime of the app (logging, connection strings, etc.). Environment-specific overrides go in `appsettings.Development.json`
+- `Program.cs` is sort of like the rackup in Rails — it's the entry point that configures services, middleware, and routes, then starts the server
+- Routes can be defined inline on actions in controllers (via `[Route]` attributes) or in `Program.cs` (via `MapControllerRoute`). There's no separate routes file
+- View lookup is convention-based: `return View()` in `HomeController.Index()` renders `Views/Home/Index.cshtml`. No explicit wiring needed. The lookup also passes through `_ViewStart.cshtml` (where the shared `_Layout.cshtml` is set) and `_ViewImports.cshtml` (where common namespaces and tag helpers are imported)
+- No per-request logging by default. `UseHttpLogging()` enables it but it's verbose HTTP wire-level output, not concise Rails-style request logs
+- Type-safe data passing to views happens by passing a model object to the `View()` constructor (e.g. `return View(book)`). `ViewData`/`ViewBag` exist but are untyped dictionaries. There's no implicit passing of data — everything goes through `View()` or `ViewData`/`ViewBag` explicitly. Only one model can be passed to a view, which leads to composing data into dedicated view model classes

@@ -1,0 +1,26 @@
+version: "7.1"
+
+environment:
+  COMPOSE_ETC: docker-compose.yml
+
+compose:
+  files:
+    - docker-compose.yml
+
+interaction:
+  sh:
+    description: Open a shell in the web container
+    service: web
+    command: /bin/bash
+
+  logs:
+    description: Follow logs from the web container
+    service: web
+    compose:
+      run_options: [no-deps]
+      method: logs
+
+  dotnet:
+    description: Run a dotnet command
+    service: web
+    command: dotnet
