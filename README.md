@@ -36,4 +36,5 @@ Bookshelf lets users:
 - **Framework:** ASP.NET MVC (.NET 8)
 - **ORM:** Entity Framework Core
 - **Database:** PostgreSQL
+- **CSS:** Tailwind CSS + DaisyUI
 - **Containerization:** Docker & Docker Compose
