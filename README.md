@@ -17,7 +17,7 @@ Bookshelf lets users:
 
 ## Planned Features
 
-- [ ] **Dockerized Development** — Run the entire application in Docker with Docker Compose
+- [x] **Dockerized Development** — Run the entire application in Docker with Docker Compose
 - [ ] **Database-Backed Models** — Books, Authors, Reviews, and Users with Entity Framework Core
 - [ ] **Model Editing** — Full CRUD UI for managing books, authors, and reviews
 - [ ] **User Accounts** — Registration, login, logout, and authentication/authorization
