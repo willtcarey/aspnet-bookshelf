@@ -1,19 +1,35 @@
-# ASP.NET MVC Sample Application
+# Bookshelf — A Personal Library Tracker
 
-A learning project to explore ASP.NET MVC and understand how it compares to Ruby on Rails. The application runs inside Docker for a consistent development environment.
+A personal library application built with ASP.NET MVC. Users can catalog books they own or have read, upload cover images, and write reviews. Built as a learning project to explore ASP.NET MVC and understand how it compares to Ruby on Rails.
 
-## Goals
+The application runs inside Docker for a consistent development environment.
 
-The primary goal is to build a small but functional web application that exercises the core features you'd typically reach for in Rails, but using ASP.NET MVC instead.
+## The Application
+
+Bookshelf lets users:
+
+- Create an account and manage their profile
+- Add books to their library with title, author, genre, and description
+- Upload cover images for books
+- Track reading status (want to read, currently reading, finished)
+- Write and edit reviews/notes for books they've read
+- Browse and search their collection
 
 ## Planned Features
 
 - [ ] **Dockerized Development** — Run the entire application in Docker with Docker Compose
-- [ ] **Database-Backed Models** — Set up Entity Framework Core with migrations and CRUD operations
-- [ ] **Model Editing** — Full create, read, update, and delete (CRUD) UI for models
+- [ ] **Database-Backed Models** — Books, Authors, Reviews, and Users with Entity Framework Core
+- [ ] **Model Editing** — Full CRUD UI for managing books, authors, and reviews
 - [ ] **User Accounts** — Registration, login, logout, and authentication/authorization
-- [ ] **File Uploading** — Upload and manage files attached to models
+- [ ] **File Uploading** — Upload and display book cover images
 - [ ] **Front-End CSS Framework** — Integrate a CSS framework (e.g., Bootstrap or Tailwind) for styling
+
+## Models
+
+- **User** — Account info, authentication
+- **Book** — Title, description, genre, reading status, cover image
+- **Author** — Name, bio (a book belongs to an author)
+- **Review** — Rating, text, belongs to a user and a book
 
 ## Tech Stack
 
