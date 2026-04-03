@@ -18,8 +18,8 @@ Bookshelf lets users:
 ## Planned Features
 
 - [x] **Dockerized Development** — Run the entire application in Docker with Docker Compose
-- [ ] **Database-Backed Models** — Books and Authors with Entity Framework Core
-- [ ] **Model Editing** — Full CRUD UI for managing books and authors
+- [x] **Database-Backed Models** — Books and Authors with Entity Framework Core
+- [x] **Model Editing** — Full CRUD UI for managing books and authors
 - [ ] **User Accounts** — Registration, login, logout, and authentication/authorization
 - [ ] **File Uploading** — Upload and display book cover images
 - [ ] **Front-End CSS Framework** — Integrate a CSS framework (e.g., Bootstrap or Tailwind) for styling
