@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
@@ -37,12 +38,14 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Create
+    [Authorize]
     public IActionResult Create()
     {
         return View(new AuthorFormViewModel());
     }
 
     // POST: Authors/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AuthorFormViewModel viewModel)
@@ -59,6 +62,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Edit/5
+    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -75,6 +79,7 @@ public class AuthorsController : Controller
     }
 
     // POST: Authors/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AuthorFormViewModel viewModel)
@@ -105,6 +110,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
@@ -119,6 +125,7 @@ public class AuthorsController : Controller
     }
 
     // POST: Authors/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

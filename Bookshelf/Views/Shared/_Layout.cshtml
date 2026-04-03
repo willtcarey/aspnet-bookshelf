@@ -16,6 +16,22 @@
                 <li><a asp-area="" asp-controller="Authors" asp-action="Index">Authors</a></li>
                 <li><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></li>
             </ul>
+            <ul class="account-nav">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li><span class="user-email">@User.Identity.Name</span></li>
+                    <li>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
+                            <button type="submit" class="link-button">Log Out</button>
+                        </form>
+                    </li>
+                }
+                else
+                {
+                    <li><a asp-controller="Account" asp-action="Login">Log In</a></li>
+                    <li><a asp-controller="Account" asp-action="Register">Register</a></li>
+                }
+            </ul>
         </nav>
     </header>
 

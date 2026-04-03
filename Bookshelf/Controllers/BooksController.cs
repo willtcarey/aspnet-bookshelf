@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Create
+    [Authorize]
     public IActionResult Create()
     {
         // TODO: Loading the authors list feels like it should move out of the controller
@@ -49,6 +51,7 @@ public class BooksController : Controller
     }
 
     // POST: Books/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookFormViewModel viewModel)
@@ -72,6 +75,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Edit/5
+    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -92,6 +96,7 @@ public class BooksController : Controller
     }
 
     // POST: Books/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, BookFormViewModel viewModel)
@@ -126,6 +131,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
@@ -140,6 +146,7 @@ public class BooksController : Controller
     }
 
     // POST: Books/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
