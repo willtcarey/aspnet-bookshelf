@@ -1,0 +1,23 @@
+@model Bookshelf.Models.Book
+
+@{
+    ViewData["Title"] = "Delete Book";
+}
+
+<h1>Delete Book</h1>
+
+<p>Are you sure you want to delete <strong>@Model.Title</strong> by @Model.Author.Name?</p>
+
+<dl>
+    <dt>ISBN</dt>
+    <dd>@Model.Isbn</dd>
+
+    <dt>Year</dt>
+    <dd>@Model.Year</dd>
+</dl>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <input type="submit" value="Delete" /> |
+    <a asp-action="Index">Back to List</a>
+</form>

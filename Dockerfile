@@ -5,5 +5,5 @@ WORKDIR /app
 # Expose the default ASP.NET port
 EXPOSE 8080
 
-# Use dotnet watch for hot reload in development
-ENTRYPOINT ["dotnet", "watch", "run", "--project", "Bookshelf", "--urls", "http://0.0.0.0:8080"]
+# Default to bash — docker-compose.yml sets the actual command for the web service
+CMD ["bash"]
