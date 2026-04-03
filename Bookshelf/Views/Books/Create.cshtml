@@ -1,4 +1,4 @@
-@model Bookshelf.Models.Book
+@model Bookshelf.ViewModels.BookFormViewModel
 
 @{
     ViewData["Title"] = "Add a Book";
@@ -16,8 +16,8 @@
     </div>
 
     <div>
-        <label asp-for="AuthorId" text="Author"></label>
-        <select asp-for="AuthorId" asp-items="ViewBag.AuthorId">
+        <label asp-for="AuthorId">Author</label>
+        <select asp-for="AuthorId" asp-items="Model.Authors">
             <option value="">-- Select Author --</option>
         </select>
         <span asp-validation-for="AuthorId"></span>

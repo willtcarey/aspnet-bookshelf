@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
+using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
 
@@ -39,24 +40,35 @@ public class BooksController : Controller
     // GET: Books/Create
     public IActionResult Create()
     {
-        ViewData["AuthorId"] = new SelectList(_context.Authors, "Id", "Name");
-        return View();
+        // TODO: Loading the authors list feels like it should move out of the controller
+        var viewModel = new BookFormViewModel
+        {
+            Authors = new SelectList(_context.Authors, "Id", "Name")
+        };
+        return View(viewModel);
     }
 
     // POST: Books/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Title,Isbn,Year,AuthorId")] Book book)
+    public async Task<IActionResult> Create(BookFormViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
+            var book = new Book
+            {
+                Title = viewModel.Title,
+                Isbn = viewModel.Isbn,
+                Year = viewModel.Year,
+                AuthorId = viewModel.AuthorId
+            };
             _context.Add(book);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        ViewData["AuthorId"] = new SelectList(_context.Authors, "Id", "Name", book.AuthorId);
-        return View(book);
+        viewModel.Authors = new SelectList(_context.Authors, "Id", "Name", viewModel.AuthorId);
+        return View(viewModel);
     }
 
     // GET: Books/Edit/5
@@ -67,35 +79,50 @@ public class BooksController : Controller
         var book = await _context.Books.FindAsync(id);
         if (book == null) return NotFound();
 
-        ViewData["AuthorId"] = new SelectList(_context.Authors, "Id", "Name", book.AuthorId);
-        return View(book);
+        var viewModel = new BookFormViewModel
+        {
+            Id = book.Id,
+            Title = book.Title,
+            Isbn = book.Isbn,
+            Year = book.Year,
+            AuthorId = book.AuthorId,
+            Authors = new SelectList(_context.Authors, "Id", "Name", book.AuthorId)
+        };
+        return View(viewModel);
     }
 
     // POST: Books/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Isbn,Year,AuthorId")] Book book)
+    public async Task<IActionResult> Edit(int id, BookFormViewModel viewModel)
     {
-        if (id != book.Id) return NotFound();
+        if (id != viewModel.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            book.Title = viewModel.Title;
+            book.Isbn = viewModel.Isbn;
+            book.Year = viewModel.Year;
+            book.AuthorId = viewModel.AuthorId;
+
             try
             {
-                _context.Update(book);
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Books.AnyAsync(b => b.Id == book.Id))
+                if (!await _context.Books.AnyAsync(b => b.Id == id))
                     return NotFound();
                 throw;
             }
             return RedirectToAction(nameof(Index));
         }
 
-        ViewData["AuthorId"] = new SelectList(_context.Authors, "Id", "Name", book.AuthorId);
-        return View(book);
+        viewModel.Authors = new SelectList(_context.Authors, "Id", "Name", viewModel.AuthorId);
+        return View(viewModel);
     }
 
     // GET: Books/Delete/5
