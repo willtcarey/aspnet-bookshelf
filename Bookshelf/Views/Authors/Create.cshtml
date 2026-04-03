@@ -9,11 +9,7 @@
 <form asp-action="Create">
     <div asp-validation-summary="ModelOnly"></div>
 
-    <div>
-        <label asp-for="Name"></label>
-        <input asp-for="Name" />
-        <span asp-validation-for="Name"></span>
-    </div>
+    <form-field asp-for="Name" />
 
     <div>
         <input type="submit" value="Create" />

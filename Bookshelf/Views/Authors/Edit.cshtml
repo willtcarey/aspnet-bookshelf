@@ -10,11 +10,7 @@
     <div asp-validation-summary="ModelOnly"></div>
     <input type="hidden" asp-for="Id" />
 
-    <div>
-        <label asp-for="Name"></label>
-        <input asp-for="Name" />
-        <span asp-validation-for="Name"></span>
-    </div>
+    <form-field asp-for="Name" />
 
     <div>
         <input type="submit" value="Save" />
