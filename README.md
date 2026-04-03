@@ -24,6 +24,7 @@ Bookshelf lets users:
 - [ ] **File Uploading** — Upload and display book cover images
 - [ ] **Front-End CSS Framework** — Integrate a CSS framework (e.g., Bootstrap or Tailwind) for styling
 - [ ] **Admin UI** — Add an admin area with a separate layout for managing site-wide data
+- [ ] **Background Job Processing** — Async job queue for tasks like image processing and email delivery
 
 ## Models
 
