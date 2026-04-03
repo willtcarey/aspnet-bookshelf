@@ -9,15 +9,9 @@
 <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
     <div asp-validation-summary="ModelOnly"></div>
 
-    <form-field asp-for="Email" />
-    <form-field asp-for="Password" />
-
-    <div>
-        <label>
-            <input asp-for="RememberMe" />
-            @Html.DisplayNameFor(m => m.RememberMe)
-        </label>
-    </div>
+    <form-text asp-for="Email" />
+    <form-text asp-for="Password" />
+    <form-checkbox asp-for="RememberMe" />
 
     <div>
         <input type="submit" value="Log In" />

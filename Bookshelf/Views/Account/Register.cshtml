@@ -9,9 +9,9 @@
 <form asp-action="Register" method="post">
     <div asp-validation-summary="ModelOnly"></div>
 
-    <form-field asp-for="Email" />
-    <form-field asp-for="Password" />
-    <form-field asp-for="ConfirmPassword" />
+    <form-text asp-for="Email" />
+    <form-text asp-for="Password" />
+    <form-text asp-for="ConfirmPassword" />
 
     <div>
         <input type="submit" value="Register" />
