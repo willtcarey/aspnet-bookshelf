@@ -1,0 +1,24 @@
+@model Bookshelf.ViewModels.BookFormViewModel
+
+@{
+    ViewData["Title"] = "Add a Book";
+}
+
+<h1>Add a Book</h1>
+
+<form asp-action="Create">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <form-field asp-for="Title" />
+    <form-field asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="-- Select Author --" />
+    <form-field asp-for="Isbn" label="ISBN" />
+    <form-field asp-for="Year" />
+
+    <div>
+        <input type="submit" value="Create" />
+    </div>
+</form>
+
+<p>
+    <a asp-action="Index">Back to List</a>
+</p>

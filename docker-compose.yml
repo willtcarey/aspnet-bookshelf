@@ -1,6 +1,18 @@
 services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: bookshelf
+      POSTGRES_PASSWORD: bookshelf
+      POSTGRES_DB: bookshelf_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+
   web:
     build: .
+    command: dotnet watch run --project Bookshelf --urls http://0.0.0.0:8080
     ports:
       - "8080:8080"
     volumes:
@@ -8,3 +20,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - ConnectionStrings__DefaultConnection=Host=db;Database=bookshelf_dev;Username=bookshelf;Password=bookshelf
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

@@ -1,0 +1,23 @@
+@model Bookshelf.Models.Book
+
+@{
+    ViewData["Title"] = "Book Details";
+}
+
+<h1>@Model.Title</h1>
+
+<dl>
+    <dt>Author</dt>
+    <dd>@Model.Author.Name</dd>
+
+    <dt>ISBN</dt>
+    <dd>@Model.Isbn</dd>
+
+    <dt>Year</dt>
+    <dd>@Model.Year</dd>
+</dl>
+
+<p>
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</p>

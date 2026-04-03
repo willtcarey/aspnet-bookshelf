@@ -1,0 +1,22 @@
+@model Bookshelf.ViewModels.AuthorFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Author";
+}
+
+<h1>Edit Author</h1>
+
+<form asp-action="Edit">
+    <div asp-validation-summary="ModelOnly"></div>
+    <input type="hidden" asp-for="Id" />
+
+    <form-field asp-for="Name" />
+
+    <div>
+        <input type="submit" value="Save" />
+    </div>
+</form>
+
+<p>
+    <a asp-action="Index">Back to List</a>
+</p>
