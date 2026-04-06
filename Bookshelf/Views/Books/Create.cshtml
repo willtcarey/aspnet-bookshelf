@@ -25,13 +25,20 @@
         <div class="card-body gap-5">
             <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
 
-            <form asp-action="Create" enctype="multipart/form-data" class="space-y-5">
+            <form asp-action="Create" class="space-y-5">
                 <form-text asp-for="Title" />
                 <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
                 <form-text asp-for="Isbn" label="ISBN" />
                 <form-text asp-for="Year" />
 
-                <form-file asp-for="CoverImage" accept="image/*" hint="Optional. Upload a cover image for this book." />
+                <fieldset class="fieldset w-full" data-direct-upload="/images/upload">
+                    <legend class="fieldset-legend">Cover image</legend>
+                    <div data-upload-preview class="hidden"></div>
+                    <input type="file" accept="image/*" data-upload-input class="file-input file-input-bordered w-full" />
+                    <input type="hidden" name="CoverImagePath" value="" data-upload-path />
+                    <label class="label text-base-content/60" data-upload-hint>Optional. Upload a cover image for this book.</label>
+                    <label class="label text-error hidden" data-upload-error></label>
+                </fieldset>
 
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="btn btn-primary" disabled="@(!hasAuthors)">Create book</button>

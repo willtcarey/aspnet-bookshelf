@@ -87,6 +87,7 @@ public class BooksController : Controller
             Isbn = book.Isbn,
             Year = book.Year,
             AuthorId = book.AuthorId,
+            CoverImagePath = book.CoverImagePath,
             ExistingCoverImagePath = book.CoverImagePath,
             Authors = await BuildAuthorsSelectListAsync(book.AuthorId)
         };
@@ -150,8 +151,8 @@ public class BooksController : Controller
         book.Isbn = viewModel.Isbn;
         book.Year = viewModel.Year;
         book.AuthorId = viewModel.AuthorId;
+        book.CoverImagePath = viewModel.CoverImagePath;
 
-        _context.AttachFile(book, nameof(Book.CoverImagePath), viewModel.CoverImage);
         await _context.SaveChangesAsync();
     }
 

@@ -1,4 +1,5 @@
 using Bookshelf.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Net.Http.Headers;
@@ -44,6 +45,34 @@ public class ImagesController : Controller
 
         _uploadsRootPath = Path.Combine(webRootPath, Path.Combine(_uploadsPathSegments));
         _cacheRootPath = Path.Combine(_uploadsRootPath, ".cache");
+    }
+
+    [HttpPost("upload")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Upload(IFormFile? file)
+    {
+        const long maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+        if (file is not { Length: > 0 })
+        {
+            return BadRequest(new { error = "No file provided." });
+        }
+
+        if (file.Length > maxFileSize)
+        {
+            return BadRequest(new { error = "File size must not exceed 10 MB." });
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { error = "Only image files are accepted." });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var path = await _fileStorage.SaveAsync(stream, file.FileName, file.ContentType);
+
+        return Ok(new { path });
     }
 
     [HttpGet("{*path}")]
