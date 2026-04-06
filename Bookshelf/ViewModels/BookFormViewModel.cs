@@ -15,10 +15,5 @@ public class BookFormViewModel
     /// </summary>
     public string? CoverImagePath { get; set; }
 
-    /// <summary>
-    /// The cover image path currently on the book (display-only, populated by Edit GET).
-    /// </summary>
-    public string? ExistingCoverImagePath { get; set; }
-
     public SelectList? Authors { get; set; }
 }

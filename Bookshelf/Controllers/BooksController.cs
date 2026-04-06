@@ -88,7 +88,6 @@ public class BooksController : Controller
             Year = book.Year,
             AuthorId = book.AuthorId,
             CoverImagePath = book.CoverImagePath,
-            ExistingCoverImagePath = book.CoverImagePath,
             Authors = await BuildAuthorsSelectListAsync(book.AuthorId)
         };
 
@@ -111,7 +110,6 @@ public class BooksController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        viewModel.ExistingCoverImagePath = book.CoverImagePath;
         viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
