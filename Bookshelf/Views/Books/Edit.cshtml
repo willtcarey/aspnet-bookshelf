@@ -4,22 +4,30 @@
     ViewData["Title"] = "Edit Book";
 }
 
-<h1>Edit Book</h1>
-
-<form asp-action="Edit">
-    <div asp-validation-summary="ModelOnly"></div>
-    <input type="hidden" asp-for="Id" />
-
-    <form-text asp-for="Title" />
-    <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="-- Select Author --" />
-    <form-text asp-for="Isbn" label="ISBN" />
-    <form-text asp-for="Year" />
-
-    <div>
-        <input type="submit" value="Save" />
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight">Edit book</h1>
+        <p class="text-base-content/75">Update the details for this title and keep your collection accurate.</p>
     </div>
-</form>
 
-<p>
-    <a asp-action="Index">Back to List</a>
-</p>
+    <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-action="Edit" class="space-y-5">
+                <input type="hidden" asp-for="Id" />
+
+                <form-text asp-for="Title" />
+                <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
+                <form-text asp-for="Isbn" label="ISBN" />
+                <form-text asp-for="Year" />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <a class="btn btn-ghost" asp-action="Details" asp-route-id="@Model.Id">View details</a>
+                    <a class="btn btn-ghost" asp-action="Index">Back to books</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

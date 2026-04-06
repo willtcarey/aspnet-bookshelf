@@ -1,6 +1,75 @@
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Welcome";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 
-<h1>Welcome</h1>
-<p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="flex flex-col gap-8">
+    <section class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.9fr)]">
+        <div class="hero rounded-[2rem] bg-gradient-to-br from-primary/15 via-base-100 to-secondary/15 shadow-xl ring-1 ring-base-300/60">
+            <div class="hero-content items-start px-8 py-12 lg:px-12">
+                <div class="max-w-2xl space-y-6">
+                    <div class="badge badge-primary badge-outline">Personal library tracker</div>
+                    <div class="space-y-4">
+                        <h1 class="text-4xl font-black tracking-tight sm:text-5xl">Build a library you’ll actually enjoy browsing.</h1>
+                        <p class="max-w-xl text-base text-base-content/75 sm:text-lg">
+                            Organize your books, keep authors close at hand, and make your Bookshelf feel like a polished reading companion.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <a class="btn btn-primary" asp-controller="Books" asp-action="Index">Browse books</a>
+                        <a class="btn btn-outline" asp-controller="Authors" asp-action="Index">Explore authors</a>
+                        @if (isAuthenticated)
+                        {
+                            <a class="btn btn-secondary" asp-controller="Books" asp-action="Create">Add a new book</a>
+                        }
+                        else
+                        {
+                            <a class="btn btn-secondary" asp-controller="Account" asp-action="Register">Create your account</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <div class="stats stats-vertical bg-base-100 shadow-lg ring-1 ring-base-300/60">
+                <div class="stat">
+                    <div class="stat-title">Books</div>
+                    <div class="stat-value text-primary">Catalog</div>
+                    <div class="stat-desc">Track titles, ISBNs, years, and the authors behind them.</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Authors</div>
+                    <div class="stat-value text-secondary">Discover</div>
+                    <div class="stat-desc">Keep a tidy roster of writers and connect books to each one.</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Access</div>
+                    <div class="stat-value text-accent">@((isAuthenticated ? "Ready" : "Secure"))</div>
+                    <div class="stat-desc">@((isAuthenticated ? "You can create, edit, and curate your collection now." : "Sign in to manage your own collection."))</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-3">
+        <div class="card bg-base-100 shadow-lg ring-1 ring-base-300/60">
+            <div class="card-body">
+                <h2 class="card-title">Simple CRUD, polished UI</h2>
+                <p class="text-sm text-base-content/75">Bookshelf uses Tailwind CSS and DaisyUI to keep everyday actions fast, clear, and pleasant.</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg ring-1 ring-base-300/60">
+            <div class="card-body">
+                <h2 class="card-title">Built for everyday reading</h2>
+                <p class="text-sm text-base-content/75">Jump from a book to its author, review details, and manage your library without friction.</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg ring-1 ring-base-300/60">
+            <div class="card-body">
+                <h2 class="card-title">Runs cleanly in Docker</h2>
+                <p class="text-sm text-base-content/75">The styling pipeline is wired into the development container, so CSS rebuilds automatically while you work.</p>
+            </div>
+        </div>
+    </section>
+</div>

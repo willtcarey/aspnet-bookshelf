@@ -4,18 +4,24 @@
     ViewData["Title"] = "Add an Author";
 }
 
-<h1>Add an Author</h1>
-
-<form asp-action="Create">
-    <div asp-validation-summary="ModelOnly"></div>
-
-    <form-text asp-for="Name" />
-
-    <div>
-        <input type="submit" value="Create" />
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight">Add an author</h1>
+        <p class="text-base-content/75">Create an author record you can reuse across your library.</p>
     </div>
-</form>
 
-<p>
-    <a asp-action="Index">Back to List</a>
-</p>
+    <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-action="Create" class="space-y-5">
+                <form-text asp-for="Name" />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary">Create author</button>
+                    <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

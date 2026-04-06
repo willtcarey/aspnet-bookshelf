@@ -21,16 +21,30 @@ public class FormSelectTagHelper : FormTagHelperBase
     {
         var selectTag = Generator.GenerateSelect(
             ViewContext, For.ModelExplorer, null, For.Name, Items,
-            allowMultiple: false, htmlAttributes: null);
+            allowMultiple: false,
+            htmlAttributes: new { @class = "select w-full" });
 
         if (!string.IsNullOrEmpty(Placeholder))
         {
             var placeholderOption = new TagBuilder("option");
             placeholderOption.Attributes["value"] = "";
+            placeholderOption.Attributes["disabled"] = "disabled";
+
+            if (ShouldSelectPlaceholder())
+            {
+                placeholderOption.Attributes["selected"] = "selected";
+            }
+
             placeholderOption.InnerHtml.Append(Placeholder);
             selectTag.InnerHtml.Prepend(placeholderOption);
         }
 
         return selectTag;
+    }
+
+    private bool ShouldSelectPlaceholder()
+    {
+        var selectedValue = For.Model?.ToString();
+        return string.IsNullOrWhiteSpace(selectedValue) || selectedValue == "0";
     }
 }

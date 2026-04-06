@@ -2,23 +2,40 @@
 
 @{
     ViewData["Title"] = "Add a Book";
+    var hasAuthors = Model.Authors?.Any() == true;
 }
 
-<h1>Add a Book</h1>
-
-<form asp-action="Create">
-    <div asp-validation-summary="ModelOnly"></div>
-
-    <form-text asp-for="Title" />
-    <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="-- Select Author --" />
-    <form-text asp-for="Isbn" label="ISBN" />
-    <form-text asp-for="Year" />
-
-    <div>
-        <input type="submit" value="Create" />
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight">Add a book</h1>
+        <p class="text-base-content/75">Create a new library entry with its author, ISBN, and publication year.</p>
     </div>
-</form>
 
-<p>
-    <a asp-action="Index">Back to List</a>
-</p>
+    @if (!hasAuthors)
+    {
+        <div class="alert alert-warning shadow-lg">
+            <span>Add at least one author before creating a book.</span>
+            <div>
+                <a class="btn btn-sm btn-neutral" asp-controller="Authors" asp-action="Create">Create an author</a>
+            </div>
+        </div>
+    }
+
+    <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-action="Create" class="space-y-5">
+                <form-text asp-for="Title" />
+                <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
+                <form-text asp-for="Isbn" label="ISBN" />
+                <form-text asp-for="Year" />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary" disabled="@(!hasAuthors)">Create book</button>
+                    <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

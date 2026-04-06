@@ -2,38 +2,95 @@
 
 @{
     ViewData["Title"] = "Books";
+    var canManage = User.Identity?.IsAuthenticated == true;
 }
 
-<h1>Books</h1>
+<div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div class="space-y-2">
+            <h1 class="text-3xl font-black tracking-tight">Books</h1>
+            <p class="text-base-content/75">Browse the books in your library, then dive into details or manage entries when you’re signed in.</p>
+        </div>
 
-<p>
-    <a asp-action="Create">Add a Book</a>
-</p>
-
-<table>
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Author</th>
-            <th>ISBN</th>
-            <th>Year</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var book in Model)
+        @if (canManage)
         {
-            <tr>
-                <td>@book.Title</td>
-                <td>@book.Author.Name</td>
-                <td>@book.Isbn</td>
-                <td>@book.Year</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@book.Id">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@book.Id">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@book.Id">Delete</a>
-                </td>
-            </tr>
+            <a class="btn btn-primary" asp-action="Create">Add a book</a>
         }
-    </tbody>
-</table>
+        else
+        {
+            <a class="btn btn-outline" asp-controller="Account" asp-action="Login">Log in to add books</a>
+        }
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+            <div class="card-body p-0">
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>ISBN</th>
+                                <th>Year</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var book in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="font-semibold">@book.Title</div>
+                                    </td>
+                                    <td>
+                                        <a class="link link-hover font-medium" asp-controller="Authors" asp-action="Details" asp-route-id="@book.AuthorId">@book.Author.Name</a>
+                                    </td>
+                                    <td>
+                                        <span class="text-sm text-base-content/70">@(string.IsNullOrWhiteSpace(book.Isbn) ? "—" : book.Isbn)</span>
+                                    </td>
+                                    <td>
+                                        @if (book.Year.HasValue)
+                                        {
+                                            <span class="badge badge-outline">@book.Year</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-sm text-base-content/60">Unknown</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a class="btn btn-ghost btn-sm" asp-action="Details" asp-route-id="@book.Id">Details</a>
+                                            @if (canManage)
+                                            {
+                                                <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@book.Id">Edit</a>
+                                                <a class="btn btn-ghost btn-sm text-error" asp-action="Delete" asp-route-id="@book.Id">Delete</a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="hero rounded-3xl bg-base-100 py-16 shadow-xl ring-1 ring-base-300/60">
+            <div class="hero-content text-center">
+                <div class="max-w-md space-y-4">
+                    <h2 class="text-2xl font-bold">No books yet</h2>
+                    <p class="text-base-content/75">Start your shelf with the first title in your collection.</p>
+                    @if (canManage)
+                    {
+                        <a class="btn btn-primary" asp-action="Create">Add your first book</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -2,22 +2,42 @@
 
 @{
     ViewData["Title"] = "Book Details";
+    var canManage = User.Identity?.IsAuthenticated == true;
 }
 
-<h1>@Model.Title</h1>
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div class="space-y-2">
+            <div class="badge badge-primary badge-outline">Book</div>
+            <h1 class="text-3xl font-black tracking-tight">@Model.Title</h1>
+            <p class="text-base-content/75">A closer look at the metadata for this book.</p>
+        </div>
 
-<dl>
-    <dt>Author</dt>
-    <dd>@Model.Author.Name</dd>
+        <div class="flex flex-wrap gap-2">
+            @if (canManage)
+            {
+                <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit book</a>
+            }
+            <a class="btn btn-ghost" asp-action="Index">Back to books</a>
+        </div>
+    </div>
 
-    <dt>ISBN</dt>
-    <dd>@Model.Isbn</dd>
-
-    <dt>Year</dt>
-    <dd>@Model.Year</dd>
-</dl>
-
-<p>
-    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</p>
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-6">
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl bg-base-200 p-4">
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
+                    <a class="mt-2 inline-block text-lg font-semibold link link-hover" asp-controller="Authors" asp-action="Details" asp-route-id="@Model.AuthorId">@Model.Author.Name</a>
+                </div>
+                <div class="rounded-2xl bg-base-200 p-4">
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">ISBN</div>
+                    <div class="mt-2 text-lg font-semibold">@(string.IsNullOrWhiteSpace(Model.Isbn) ? "Not provided" : Model.Isbn)</div>
+                </div>
+                <div class="rounded-2xl bg-base-200 p-4">
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">Year</div>
+                    <div class="mt-2 text-lg font-semibold">@(Model.Year?.ToString() ?? "Unknown")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

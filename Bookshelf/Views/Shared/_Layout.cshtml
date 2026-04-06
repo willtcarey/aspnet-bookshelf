@@ -1,47 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full" data-theme="nord">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Bookshelf</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav>
-            <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">Bookshelf</a>
-            <ul>
-                <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
-                <li><a asp-area="" asp-controller="Books" asp-action="Index">Books</a></li>
-                <li><a asp-area="" asp-controller="Authors" asp-action="Index">Authors</a></li>
-                <li><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></li>
-            </ul>
-            <ul class="account-nav">
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <li><span class="user-email">@User.Identity.Name</span></li>
-                    <li>
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
-                            <button type="submit" class="link-button">Log Out</button>
-                        </form>
-                    </li>
-                }
-                else
-                {
-                    <li><a asp-controller="Account" asp-action="Login">Log In</a></li>
-                    <li><a asp-controller="Account" asp-action="Register">Register</a></li>
-                }
-            </ul>
-        </nav>
-    </header>
+<body class="min-h-full">
+    <div class="flex min-h-screen flex-col">
+        <partial name="_Navigation" />
 
-    <main>
-        @RenderBody()
-    </main>
+        <main class="mx-auto flex w-full max-w-6xl flex-1 px-4 py-8 lg:py-10">
+            <div class="w-full">
+                @RenderBody()
+            </div>
+        </main>
 
-    <footer>
-        &copy; 2026 - Bookshelf - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-    </footer>
+        <footer class="border-t border-base-300/60 bg-base-100">
+            <div class="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-base-content/70 sm:flex-row sm:items-center sm:justify-between">
+                <p>&copy; 2026 Bookshelf. Keep your reading life beautifully organized.</p>
+                <a class="link link-hover font-medium" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </div>
+        </footer>
+    </div>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

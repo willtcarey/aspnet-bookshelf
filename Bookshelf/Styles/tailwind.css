@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: nord;
+}
+
+@source "../Views/**/*.cshtml";
+@source "../TagHelpers/**/*.cs";
+
+@layer base {
+  html {
+    @apply h-full scroll-smooth;
+  }
+
+  body {
+    @apply min-h-full bg-base-200 text-base-content;
+  }
+}

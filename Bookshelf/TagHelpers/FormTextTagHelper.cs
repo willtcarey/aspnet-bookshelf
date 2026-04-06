@@ -16,8 +16,43 @@ public class FormTextTagHelper : FormTagHelperBase
 
     protected override TagBuilder GenerateInput()
     {
-        return Generator.GenerateTextBox(
+        var inputTag = Generator.GenerateTextBox(
             ViewContext, For.ModelExplorer, For.Name, For.Model,
-            null, new { type = InputType ?? "text" });
+            null, new { type = ResolveInputType() });
+
+        inputTag.AddCssClass("input w-full");
+        return inputTag;
+    }
+
+    private string ResolveInputType()
+    {
+        if (!string.IsNullOrWhiteSpace(InputType))
+        {
+            return InputType;
+        }
+
+        var dataType = For.Metadata.DataTypeName?.ToLowerInvariant();
+        return dataType switch
+        {
+            "password" => "password",
+            "emailaddress" => "email",
+            "url" => "url",
+            "phonenumber" => "tel",
+            _ when IsNumericType(For.ModelExplorer.ModelType) => "number",
+            _ => "text"
+        };
+    }
+
+    private static bool IsNumericType(Type type)
+    {
+        var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+
+        return underlyingType == typeof(byte)
+            || underlyingType == typeof(short)
+            || underlyingType == typeof(int)
+            || underlyingType == typeof(long)
+            || underlyingType == typeof(float)
+            || underlyingType == typeof(double)
+            || underlyingType == typeof(decimal);
     }
 }

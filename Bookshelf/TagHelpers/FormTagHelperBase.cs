@@ -20,6 +20,10 @@ public abstract class FormTagHelperBase : TagHelper
     [HtmlAttributeName("label")]
     public string? Label { get; set; }
 
+    protected virtual string WrapperClasses => "fieldset w-full";
+    protected virtual string LabelClasses => "fieldset-legend";
+    protected virtual string ValidationClasses => "label text-error";
+
     protected FormTagHelperBase(IHtmlGenerator generator, HtmlEncoder encoder)
     {
         Generator = generator;
@@ -28,17 +32,20 @@ public abstract class FormTagHelperBase : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        output.TagName = "div";
+        output.TagName = "fieldset";
         output.TagMode = TagMode.StartTagAndEndTag;
+        output.Attributes.SetAttribute("class", WrapperClasses);
 
         var labelTag = Generator.GenerateLabel(
-            ViewContext, For.ModelExplorer, For.Name, Label, null);
+            ViewContext, For.ModelExplorer, For.Name, Label,
+            new { @class = LabelClasses });
 
         var inputTag = GenerateInput();
 
         var validationTag = Generator.GenerateValidationMessage(
             ViewContext, For.ModelExplorer, For.Name, null,
-            ViewContext.ValidationMessageElement, null);
+            ViewContext.ValidationMessageElement,
+            new { @class = ValidationClasses });
 
         RenderContent(output, labelTag, inputTag, validationTag);
     }

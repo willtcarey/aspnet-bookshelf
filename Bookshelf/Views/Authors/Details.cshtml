@@ -2,30 +2,56 @@
 
 @{
     ViewData["Title"] = "Author Details";
+    var canManage = User.Identity?.IsAuthenticated == true;
 }
 
-<h1>@Model.Name</h1>
+<div class="mx-auto flex max-w-4xl flex-col gap-6">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div class="space-y-2">
+            <div class="badge badge-secondary badge-outline">Author</div>
+            <h1 class="text-3xl font-black tracking-tight">@Model.Name</h1>
+            <p class="text-base-content/75">See every book currently associated with this author.</p>
+        </div>
 
-<h2>Books</h2>
+        <div class="flex flex-wrap gap-2">
+            @if (canManage)
+            {
+                <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit author</a>
+            }
+            <a class="btn btn-ghost" asp-action="Index">Back to authors</a>
+        </div>
+    </div>
 
-@if (Model.Books.Any())
-{
-    <ul>
-        @foreach (var book in Model.Books)
-        {
-            <li>
-                <a asp-controller="Books" asp-action="Details" asp-route-id="@book.Id">@book.Title</a>
-                @if (book.Year.HasValue) { <span>(@book.Year)</span> }
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <p>No books yet.</p>
-}
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="card-title">Books</h2>
+                <span class="badge badge-outline">@Model.Books.Count title(s)</span>
+            </div>
 
-<p>
-    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</p>
+            @if (Model.Books.Any())
+            {
+                <div class="grid gap-4 sm:grid-cols-2">
+                    @foreach (var book in Model.Books.OrderBy(book => book.Title))
+                    {
+                        <div class="rounded-2xl bg-base-200 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <a class="link link-hover text-lg font-semibold" asp-controller="Books" asp-action="Details" asp-route-id="@book.Id">@book.Title</a>
+                                    <p class="text-sm text-base-content/65">@(book.Year?.ToString() ?? "Year unknown")</p>
+                                </div>
+                                <span class="badge badge-ghost">Book</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="rounded-2xl border border-dashed border-base-300 bg-base-200 p-6 text-sm text-base-content/75">
+                    No books are linked to this author yet.
+                </div>
+            }
+        </div>
+    </div>
+</div>
