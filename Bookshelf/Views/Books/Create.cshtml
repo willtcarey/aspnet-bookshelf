@@ -31,12 +31,7 @@
                 <form-text asp-for="Isbn" label="ISBN" />
                 <form-text asp-for="Year" />
 
-                <fieldset class="fieldset w-full">
-                    <label asp-for="CoverImage" class="fieldset-legend"></label>
-                    <input asp-for="CoverImage" type="file" accept="image/*" class="file-input file-input-bordered w-full" />
-                    <label class="label text-base-content/60">Optional. Upload a cover image for this book.</label>
-                    <span asp-validation-for="CoverImage" class="label text-error"></span>
-                </fieldset>
+                <form-file asp-for="CoverImage" accept="image/*" hint="Optional. Upload a cover image for this book." />
 
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="btn btn-primary" disabled="@(!hasAuthors)">Create book</button>
