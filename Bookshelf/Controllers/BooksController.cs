@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
 
+[Authorize]
 public class BooksController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -17,6 +19,7 @@ public class BooksController : Controller
     }
 
     // GET: Books
+    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
         var books = await _context.Books.Include(b => b.Author).ToListAsync();
@@ -24,6 +27,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Details/5
+    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();

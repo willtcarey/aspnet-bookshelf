@@ -9,10 +9,10 @@
 <form asp-action="Create">
     <div asp-validation-summary="ModelOnly"></div>
 
-    <form-field asp-for="Title" />
-    <form-field asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="-- Select Author --" />
-    <form-field asp-for="Isbn" label="ISBN" />
-    <form-field asp-for="Year" />
+    <form-text asp-for="Title" />
+    <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="-- Select Author --" />
+    <form-text asp-for="Isbn" label="ISBN" />
+    <form-text asp-for="Year" />
 
     <div>
         <input type="submit" value="Create" />

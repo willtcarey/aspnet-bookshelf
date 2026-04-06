@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
@@ -6,6 +7,7 @@ using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
 
+[Authorize]
 public class AuthorsController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -16,6 +18,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors
+    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
         var authors = await _context.Authors.ToListAsync();
@@ -23,6 +26,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Details/5
+    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();

@@ -1,0 +1,23 @@
+@model Bookshelf.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h1>Register</h1>
+
+<form asp-action="Register" method="post">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <form-text asp-for="Email" />
+    <form-text asp-for="Password" />
+    <form-text asp-for="ConfirmPassword" />
+
+    <div>
+        <input type="submit" value="Register" />
+    </div>
+</form>
+
+<p>
+    Already have an account? <a asp-action="Login">Log in</a>
+</p>
