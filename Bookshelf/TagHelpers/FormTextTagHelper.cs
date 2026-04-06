@@ -20,7 +20,7 @@ public class FormTextTagHelper : FormTagHelperBase
             ViewContext, For.ModelExplorer, For.Name, For.Model,
             null, new { type = ResolveInputType() });
 
-        inputTag.AddCssClass("input input-bordered w-full");
+        inputTag.AddCssClass("input w-full");
         return inputTag;
     }
 

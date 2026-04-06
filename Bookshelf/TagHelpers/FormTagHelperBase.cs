@@ -20,9 +20,9 @@ public abstract class FormTagHelperBase : TagHelper
     [HtmlAttributeName("label")]
     public string? Label { get; set; }
 
-    protected virtual string WrapperClasses => "form-control w-full gap-2";
-    protected virtual string LabelClasses => "label pb-0 font-medium text-base-content";
-    protected virtual string ValidationClasses => "mt-1 text-sm text-error";
+    protected virtual string WrapperClasses => "fieldset w-full";
+    protected virtual string LabelClasses => "fieldset-legend";
+    protected virtual string ValidationClasses => "label text-error";
 
     protected FormTagHelperBase(IHtmlGenerator generator, HtmlEncoder encoder)
     {
@@ -32,7 +32,7 @@ public abstract class FormTagHelperBase : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        output.TagName = "div";
+        output.TagName = "fieldset";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("class", WrapperClasses);
 

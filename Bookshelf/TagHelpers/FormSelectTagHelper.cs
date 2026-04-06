@@ -22,7 +22,7 @@ public class FormSelectTagHelper : FormTagHelperBase
         var selectTag = Generator.GenerateSelect(
             ViewContext, For.ModelExplorer, null, For.Name, Items,
             allowMultiple: false,
-            htmlAttributes: new { @class = "select select-bordered w-full" });
+            htmlAttributes: new { @class = "select w-full" });
 
         if (!string.IsNullOrEmpty(Placeholder))
         {

@@ -8,8 +8,8 @@ namespace Bookshelf.TagHelpers;
 [HtmlTargetElement("form-checkbox", Attributes = "asp-for")]
 public class FormCheckboxTagHelper : FormTagHelperBase
 {
-    protected override string WrapperClasses => "form-control gap-2";
-    protected override string LabelClasses => "text-sm font-medium text-base-content";
+    protected override string WrapperClasses => "fieldset gap-2";
+    protected override string LabelClasses => "text-sm font-medium text-base-content cursor-pointer";
 
     public FormCheckboxTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
         : base(generator, encoder) { }
