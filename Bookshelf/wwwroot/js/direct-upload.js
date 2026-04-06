@@ -15,7 +15,34 @@
  */
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-direct-upload]").forEach(initContainer);
+    document.querySelectorAll("form").forEach(guardForm);
 });
+
+/**
+ * Prevent form submission while any direct uploads are still in progress.
+ * Each upload container registers its pending promise on the form so we can
+ * await them all before the submit goes through.
+ */
+function guardForm(form) {
+    if (!form.querySelector("[data-direct-upload]")) return;
+
+    form._pendingUploads = form._pendingUploads || new Set();
+
+    form.addEventListener("submit", async (e) => {
+        if (form._pendingUploads.size === 0) return;
+
+        e.preventDefault();
+
+        try {
+            await Promise.all(form._pendingUploads);
+        } catch {
+            // Upload errors are already shown per-field — don't submit.
+            return;
+        }
+
+        form.requestSubmit();
+    });
+}
 
 function initContainer(container) {
     const uploadUrl = container.dataset.directUpload;
@@ -27,23 +54,29 @@ function initContainer(container) {
 
     if (!fileInput || !pathInput) return;
 
-    fileInput.addEventListener("change", async () => {
+    fileInput.addEventListener("change", () => {
         const file = fileInput.files[0];
         if (!file) return;
 
         clearError();
         showUploading();
 
-        try {
-            const path = await upload(uploadUrl, file, container);
-            pathInput.value = path;
-            showPreview(path);
-        } catch (err) {
-            showError(err.message || "Upload failed. Please try again.");
-        } finally {
-            // Reset the file input so the same file can be re-selected if needed.
-            fileInput.value = "";
-        }
+        const form = container.closest("form");
+        const promise = (async () => {
+            try {
+                const path = await upload(uploadUrl, file, container);
+                pathInput.value = path;
+                showPreview(path);
+            } catch (err) {
+                showError(err.message || "Upload failed. Please try again.");
+                throw err; // Re-throw so Promise.all in guardForm rejects.
+            } finally {
+                fileInput.value = "";
+                form?._pendingUploads?.delete(promise);
+            }
+        })();
+
+        form?._pendingUploads?.add(promise);
     });
 
     function clearError() {

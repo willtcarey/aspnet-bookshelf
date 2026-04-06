@@ -25,7 +25,7 @@ public class FormFileTagHelper : FormTagHelperBase
     /// The endpoint must return JSON with a <c>path</c> property.
     /// </summary>
     [HtmlAttributeName("upload-url")]
-    public string UploadUrl { get; set; } = "/images/upload";
+    public string UploadUrl { get; set; } = "/images/create";
 
     public FormFileTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
         : base(generator, encoder) { }
