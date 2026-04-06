@@ -65,34 +65,18 @@ public class BooksController : Controller
     {
         if (ModelState.IsValid)
         {
-            string? coverImagePath = null;
-
-            try
+            var book = new Book
             {
-                coverImagePath = await SaveCoverImageAsync(viewModel.CoverImage);
+                Title = viewModel.Title,
+                Isbn = viewModel.Isbn,
+                Year = viewModel.Year,
+                AuthorId = viewModel.AuthorId,
+                CoverImagePath = await SaveCoverImageAsync(viewModel.CoverImage)
+            };
 
-                var book = new Book
-                {
-                    Title = viewModel.Title,
-                    Isbn = viewModel.Isbn,
-                    Year = viewModel.Year,
-                    AuthorId = viewModel.AuthorId,
-                    CoverImagePath = coverImagePath
-                };
-
-                _context.Add(book);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                if (!string.IsNullOrWhiteSpace(coverImagePath))
-                {
-                    await _fileStorage.DeleteAsync(coverImagePath);
-                }
-
-                throw;
-            }
+            _context.Add(book);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
@@ -133,9 +117,6 @@ public class BooksController : Controller
 
         if (ModelState.IsValid)
         {
-            var previousCoverImagePath = book.CoverImagePath;
-            string? newCoverImagePath = null;
-
             book.Title = viewModel.Title;
             book.Isbn = viewModel.Isbn;
             book.Year = viewModel.Year;
@@ -143,40 +124,10 @@ public class BooksController : Controller
 
             if (viewModel.CoverImage is { Length: > 0 })
             {
-                newCoverImagePath = await SaveCoverImageAsync(viewModel.CoverImage);
-                book.CoverImagePath = newCoverImagePath;
+                book.CoverImagePath = await SaveCoverImageAsync(viewModel.CoverImage);
             }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!string.IsNullOrWhiteSpace(newCoverImagePath))
-                {
-                    await _fileStorage.DeleteAsync(newCoverImagePath);
-                }
-
-                if (!await _context.Books.AnyAsync(b => b.Id == id))
-                    return NotFound();
-                throw;
-            }
-            catch
-            {
-                if (!string.IsNullOrWhiteSpace(newCoverImagePath))
-                {
-                    await _fileStorage.DeleteAsync(newCoverImagePath);
-                }
-
-                throw;
-            }
-
-            if (!string.IsNullOrWhiteSpace(newCoverImagePath) && !string.IsNullOrWhiteSpace(previousCoverImagePath))
-            {
-                await _fileStorage.DeleteAsync(previousCoverImagePath);
-            }
-
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -207,15 +158,8 @@ public class BooksController : Controller
         var book = await _context.Books.FindAsync(id);
         if (book != null)
         {
-            var coverImagePath = book.CoverImagePath;
-
             _context.Books.Remove(book);
             await _context.SaveChangesAsync();
-
-            if (!string.IsNullOrWhiteSpace(coverImagePath))
-            {
-                await _fileStorage.DeleteAsync(coverImagePath);
-            }
         }
 
         return RedirectToAction(nameof(Index));

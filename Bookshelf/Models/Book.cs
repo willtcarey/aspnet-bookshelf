@@ -1,3 +1,5 @@
+using Bookshelf.Attributes;
+
 namespace Bookshelf.Models;
 
 public class Book
@@ -6,6 +8,8 @@ public class Book
     public string Title { get; set; } = string.Empty;
     public string? Isbn { get; set; }
     public int? Year { get; set; }
+
+    [FileAttachment]
     public string? CoverImagePath { get; set; }
 
     public int AuthorId { get; set; }
