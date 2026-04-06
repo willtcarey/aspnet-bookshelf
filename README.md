@@ -22,7 +22,7 @@ Bookshelf lets users:
 - [x] **Model Editing** — Full CRUD UI for managing books and authors (`bbd2690`)
 - [x] **User Accounts** — Registration, login, logout, and authentication/authorization (`f4e6424`)
 - [ ] **File Uploading** — Upload and display book cover images
-- [x] **Front-End CSS Framework** — Tailwind CSS + DaisyUI integrated with an automatic Docker-based watch/build pipeline
+- [x] **Front-End CSS Framework** — Tailwind CSS + DaisyUI integrated with an automatic Docker-based watch/build pipeline (`febec77`)
 - [ ] **Admin UI** — Add an admin area with a separate layout for managing site-wide data
 - [ ] **Background Job Processing** — Async job queue for tasks like image processing and email delivery
 
