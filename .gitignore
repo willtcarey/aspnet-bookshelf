@@ -10,3 +10,6 @@ Bookshelf/wwwroot/css/site.css
 
 ## Uploaded files
 Bookshelf/wwwroot/uploads/
+
+## Resized image cache
+Bookshelf/wwwroot/uploads/.cache/

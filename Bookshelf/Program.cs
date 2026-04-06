@@ -27,6 +27,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpLogging(o => {});
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+builder.Services.AddSingleton<IImageProcessor, ImageSharpImageProcessor>();
 
 var app = builder.Build();
 

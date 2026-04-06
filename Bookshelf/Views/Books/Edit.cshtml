@@ -29,7 +29,7 @@
                     @if (!string.IsNullOrWhiteSpace(Model.ExistingCoverImagePath))
                     {
                         <div class="flex items-center gap-4 rounded-2xl bg-base-100 p-4 ring-1 ring-base-300/60">
-                            <img src="@Model.ExistingCoverImagePath" alt="Current cover for @Model.Title" class="h-24 w-16 rounded-lg object-cover shadow" />
+                            <cover-image path="@Model.ExistingCoverImagePath" width="64" height="96" alt="Current cover for @Model.Title" class="h-24 w-16 rounded-lg object-cover shadow" />
                             <div class="text-sm text-base-content/70">
                                 <div class="font-semibold text-base-content">Current cover</div>
                                 <div>Upload a new image to replace it.</div>

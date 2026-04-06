@@ -20,7 +20,7 @@
                 <div>
                     @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath))
                     {
-                        <img src="@Model.CoverImagePath" alt="Cover for @Model.Title" class="h-48 w-32 rounded-xl object-cover shadow" />
+                        <cover-image path="@Model.CoverImagePath" width="128" height="192" alt="Cover for @Model.Title" class="h-48 w-32 rounded-xl object-cover shadow" />
                     }
                     else
                     {

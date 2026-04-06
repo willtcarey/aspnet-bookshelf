@@ -27,7 +27,7 @@
             <div class="card-body items-center justify-center">
                 @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath))
                 {
-                    <img src="@Model.CoverImagePath" alt="Cover for @Model.Title" class="w-full rounded-2xl object-cover shadow-lg" />
+                    <cover-image path="@Model.CoverImagePath" width="384" height="576" alt="Cover for @Model.Title" class="w-full rounded-2xl object-cover shadow-lg" />
                 }
                 else
                 {

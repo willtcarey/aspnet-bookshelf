@@ -14,4 +14,4 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-dotnet watch run --project /app/Bookshelf --urls http://0.0.0.0:8080
+dotnet watch run --project /app/Bookshelf --urls http://0.0.0.0:8080 --non-interactive
