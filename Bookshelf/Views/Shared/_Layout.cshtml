@@ -8,55 +8,7 @@
 </head>
 <body class="min-h-full">
     <div class="flex min-h-screen flex-col">
-        <header class="border-b border-base-300/60 bg-base-100/80 backdrop-blur">
-            <div class="mx-auto w-full max-w-6xl px-4 py-4">
-                <div class="navbar rounded-box bg-base-100 px-4 shadow-sm ring-1 ring-base-300/60">
-                    <div class="navbar-start gap-2">
-                        <div class="dropdown lg:hidden">
-                            <label tabindex="0" class="btn btn-ghost btn-circle" aria-label="Open navigation menu">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </label>
-                            <ul tabindex="0" class="menu menu-sm dropdown-content z-[1] mt-3 w-56 rounded-box bg-base-100 p-2 shadow-xl ring-1 ring-base-300/60">
-                                <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
-                                <li><a asp-area="" asp-controller="Books" asp-action="Index">Books</a></li>
-                                <li><a asp-area="" asp-controller="Authors" asp-action="Index">Authors</a></li>
-                                <li><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></li>
-                            </ul>
-                        </div>
-
-                        <a class="btn btn-ghost px-2 text-xl font-black tracking-tight text-primary" asp-area="" asp-controller="Home" asp-action="Index">
-                            Bookshelf
-                        </a>
-                    </div>
-
-                    <div class="navbar-center hidden lg:flex">
-                        <ul class="menu menu-horizontal gap-1 px-1 text-sm font-medium">
-                            <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
-                            <li><a asp-area="" asp-controller="Books" asp-action="Index">Books</a></li>
-                            <li><a asp-area="" asp-controller="Authors" asp-action="Index">Authors</a></li>
-                            <li><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></li>
-                        </ul>
-                    </div>
-
-                    <div class="navbar-end gap-2">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <span class="badge badge-outline hidden h-10 items-center px-3 text-xs sm:inline-flex">@User.Identity.Name</span>
-                            <form asp-controller="Account" asp-action="Logout" method="post">
-                                <button type="submit" class="btn btn-ghost btn-sm">Log Out</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a class="btn btn-ghost btn-sm" asp-controller="Account" asp-action="Login">Log In</a>
-                            <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Register">Register</a>
-                        }
-                    </div>
-                </div>
-            </div>
-        </header>
+        <partial name="_Navigation" />
 
         <main class="mx-auto flex w-full max-w-6xl flex-1 px-4 py-8 lg:py-10">
             <div class="w-full">

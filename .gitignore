@@ -4,3 +4,6 @@
 
 ## Node dependencies
 **/node_modules/
+
+## Generated CSS
+Bookshelf/wwwroot/css/site.css
