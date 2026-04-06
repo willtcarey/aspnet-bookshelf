@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
-using Bookshelf.Services;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -13,12 +12,10 @@ namespace Bookshelf.Controllers;
 public class BooksController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly IFileStorage _fileStorage;
 
-    public BooksController(ApplicationDbContext context, IFileStorage fileStorage)
+    public BooksController(ApplicationDbContext context)
     {
         _context = context;
-        _fileStorage = fileStorage;
     }
 
     // GET: Books
@@ -70,11 +67,11 @@ public class BooksController : Controller
                 Title = viewModel.Title,
                 Isbn = viewModel.Isbn,
                 Year = viewModel.Year,
-                AuthorId = viewModel.AuthorId,
-                CoverImagePath = await SaveCoverImageAsync(viewModel.CoverImage)
+                AuthorId = viewModel.AuthorId
             };
 
             _context.Add(book);
+            _context.AttachFile(book, nameof(Book.CoverImagePath), viewModel.CoverImage);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
@@ -122,11 +119,7 @@ public class BooksController : Controller
             book.Year = viewModel.Year;
             book.AuthorId = viewModel.AuthorId;
 
-            if (viewModel.CoverImage is { Length: > 0 })
-            {
-                book.CoverImagePath = await SaveCoverImageAsync(viewModel.CoverImage);
-            }
-
+            _context.AttachFile(book, nameof(Book.CoverImagePath), viewModel.CoverImage);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
@@ -172,16 +165,5 @@ public class BooksController : Controller
             .ToListAsync();
 
         return new SelectList(authors, "Id", "Name", selectedAuthorId);
-    }
-
-    private async Task<string?> SaveCoverImageAsync(IFormFile? coverImage)
-    {
-        if (coverImage is not { Length: > 0 })
-        {
-            return null;
-        }
-
-        await using var stream = coverImage.OpenReadStream();
-        return await _fileStorage.SaveAsync(stream, coverImage.FileName, coverImage.ContentType);
     }
 }

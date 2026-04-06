@@ -14,6 +14,7 @@ namespace Bookshelf.Data;
 public class ApplicationDbContext : IdentityDbContext
 {
     private readonly IFileStorage _fileStorage;
+    private readonly List<PendingFileAttachment> _pendingAttachments = new();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IFileStorage fileStorage)
         : base(options)
@@ -24,14 +25,30 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<Book> Books => Set<Book>();
     public DbSet<Author> Authors => Set<Author>();
 
+    // Queue a file to be saved to storage when SaveChangesAsync is called.
+    // The resulting storage path will be set on the entity's property automatically.
+    // Pass null or an empty file to no-op (safe to call unconditionally with form data).
+    public void AttachFile(object entity, string propertyName, IFormFile? file)
+    {
+        if (file is not { Length: > 0 }) return;
+
+        _pendingAttachments.Add(new PendingFileAttachment(entity, propertyName, file));
+    }
+
     // Automatically manages file lifecycle for properties marked with [FileAttachment].
-    // Uses the change tracker to detect when file-backed properties are added, changed,
-    // or deleted, and handles cleanup accordingly:
+    //
+    // Before saving:
+    //   - Processes pending file attachments queued via AttachFile(), saving them to
+    //     storage and setting the resulting path on the entity property
+    //
+    // After saving, uses the change tracker to handle cleanup:
     //   - Added entity: rolls back the uploaded file if SaveChanges fails
     //   - Modified entity: deletes the old file on success, rolls back the new file on failure
     //   - Deleted entity: deletes the file on success
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        await ProcessPendingAttachmentsAsync();
+
         var pathsToDeleteOnSuccess = new List<string>();
         var pathsToDeleteOnFailure = new List<string>();
 
@@ -101,4 +118,21 @@ public class ApplicationDbContext : IdentityDbContext
 
         return result;
     }
+
+    private async Task ProcessPendingAttachmentsAsync()
+    {
+        foreach (var attachment in _pendingAttachments)
+        {
+            await using var stream = attachment.File.OpenReadStream();
+            var path = await _fileStorage.SaveAsync(
+                stream, attachment.File.FileName, attachment.File.ContentType);
+
+            var property = attachment.Entity.GetType().GetProperty(attachment.PropertyName);
+            property!.SetValue(attachment.Entity, path);
+        }
+
+        _pendingAttachments.Clear();
+    }
+
+    private record PendingFileAttachment(object Entity, string PropertyName, IFormFile File);
 }
