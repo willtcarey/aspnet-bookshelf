@@ -7,6 +7,7 @@ using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
 
+[Authorize]
 public class AuthorsController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -17,6 +18,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors
+    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
         var authors = await _context.Authors.ToListAsync();
@@ -24,6 +26,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Details/5
+    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -38,14 +41,12 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Create
-    [Authorize]
     public IActionResult Create()
     {
         return View(new AuthorFormViewModel());
     }
 
     // POST: Authors/Create
-    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AuthorFormViewModel viewModel)
@@ -62,7 +63,6 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Edit/5
-    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -79,7 +79,6 @@ public class AuthorsController : Controller
     }
 
     // POST: Authors/Edit/5
-    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AuthorFormViewModel viewModel)
@@ -110,7 +109,6 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Delete/5
-    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
@@ -125,7 +123,6 @@ public class AuthorsController : Controller
     }
 
     // POST: Authors/Delete/5
-    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

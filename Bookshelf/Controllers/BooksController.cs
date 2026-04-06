@@ -8,6 +8,7 @@ using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
 
+[Authorize]
 public class BooksController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -18,6 +19,7 @@ public class BooksController : Controller
     }
 
     // GET: Books
+    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
         var books = await _context.Books.Include(b => b.Author).ToListAsync();
@@ -25,6 +27,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Details/5
+    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -39,7 +42,6 @@ public class BooksController : Controller
     }
 
     // GET: Books/Create
-    [Authorize]
     public IActionResult Create()
     {
         // TODO: Loading the authors list feels like it should move out of the controller
@@ -51,7 +53,6 @@ public class BooksController : Controller
     }
 
     // POST: Books/Create
-    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookFormViewModel viewModel)
@@ -75,7 +76,6 @@ public class BooksController : Controller
     }
 
     // GET: Books/Edit/5
-    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -96,7 +96,6 @@ public class BooksController : Controller
     }
 
     // POST: Books/Edit/5
-    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, BookFormViewModel viewModel)
@@ -131,7 +130,6 @@ public class BooksController : Controller
     }
 
     // GET: Books/Delete/5
-    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
@@ -146,7 +144,6 @@ public class BooksController : Controller
     }
 
     // POST: Books/Delete/5
-    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
