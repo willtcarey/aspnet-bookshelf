@@ -62,17 +62,9 @@ public class BooksController : Controller
     {
         if (ModelState.IsValid)
         {
-            var book = new Book
-            {
-                Title = viewModel.Title,
-                Isbn = viewModel.Isbn,
-                Year = viewModel.Year,
-                AuthorId = viewModel.AuthorId
-            };
-
+            var book = new Book();
             _context.Add(book);
-            _context.AttachFile(book, nameof(Book.CoverImagePath), viewModel.CoverImage);
-            await _context.SaveChangesAsync();
+            await ApplyAndSaveAsync(book, viewModel);
             return RedirectToAction(nameof(Index));
         }
 
@@ -114,13 +106,7 @@ public class BooksController : Controller
 
         if (ModelState.IsValid)
         {
-            book.Title = viewModel.Title;
-            book.Isbn = viewModel.Isbn;
-            book.Year = viewModel.Year;
-            book.AuthorId = viewModel.AuthorId;
-
-            _context.AttachFile(book, nameof(Book.CoverImagePath), viewModel.CoverImage);
-            await _context.SaveChangesAsync();
+            await ApplyAndSaveAsync(book, viewModel);
             return RedirectToAction(nameof(Index));
         }
 
@@ -156,6 +142,17 @@ public class BooksController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task ApplyAndSaveAsync(Book book, BookFormViewModel viewModel)
+    {
+        book.Title = viewModel.Title;
+        book.Isbn = viewModel.Isbn;
+        book.Year = viewModel.Year;
+        book.AuthorId = viewModel.AuthorId;
+
+        _context.AttachFile(book, nameof(Book.CoverImagePath), viewModel.CoverImage);
+        await _context.SaveChangesAsync();
     }
 
     private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
