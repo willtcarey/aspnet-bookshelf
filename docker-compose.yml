@@ -12,17 +12,20 @@ services:
 
   web:
     build: .
-    command: dotnet watch run --project Bookshelf --urls http://0.0.0.0:8080
+    command: ./scripts/start-dev.sh
     ports:
       - "8080:8080"
     volumes:
       - .:/app
+      - node_modules:/app/Bookshelf/node_modules
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - CHOKIDAR_USEPOLLING=true
       - ConnectionStrings__DefaultConnection=Host=db;Database=bookshelf_dev;Username=bookshelf;Password=bookshelf
     depends_on:
       - db
 
 volumes:
   pgdata:
+  node_modules:

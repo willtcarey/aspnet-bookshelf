@@ -1,6 +1,29 @@
 @{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Privacy";
 }
 
-<h1>@ViewData["Title"]</h1>
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight">Privacy</h1>
+        <p class="text-base-content/75">A short overview of how Bookshelf handles your account and collection data in development.</p>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-4">
+            <p>
+                Bookshelf stores the information you enter to support the app experience: your account details, books, and authors.
+                In this sample app, data is kept in the development PostgreSQL database running in Docker.
+            </p>
+
+            <div class="alert alert-info">
+                <span>This is a sample project, so use development-friendly credentials and data rather than sensitive personal information.</span>
+            </div>
+
+            <ul class="list-disc space-y-2 pl-5 text-sm text-base-content/75">
+                <li>Your email is used for authentication and displayed in the navigation when you are signed in.</li>
+                <li>Books and authors you create are stored in the local development database.</li>
+                <li>No third-party analytics or tracking tools are configured in this project.</li>
+            </ul>
+        </div>
+    </div>
+</div>

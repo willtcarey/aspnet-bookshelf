@@ -4,20 +4,30 @@
     ViewData["Title"] = "Log In";
 }
 
-<h1>Log In</h1>
+<section class="flex min-h-[70vh] items-center justify-center">
+    <div class="w-full max-w-md">
+        <div class="card bg-base-100 shadow-2xl ring-1 ring-base-300/60">
+            <div class="card-body gap-6">
+                <div class="space-y-2 text-center">
+                    <h1 class="text-3xl font-black tracking-tight">Welcome back</h1>
+                    <p class="text-sm text-base-content/70">Log in to manage your books, authors, and reading life.</p>
+                </div>
 
-<form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
-    <div asp-validation-summary="ModelOnly"></div>
+                <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
 
-    <form-text asp-for="Email" />
-    <form-text asp-for="Password" />
-    <form-checkbox asp-for="RememberMe" />
+                <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="space-y-5">
+                    <form-text asp-for="Email" />
+                    <form-text asp-for="Password" />
+                    <form-checkbox asp-for="RememberMe" />
 
-    <div>
-        <input type="submit" value="Log In" />
+                    <button type="submit" class="btn btn-primary w-full">Log in</button>
+                </form>
+
+                <p class="text-center text-sm text-base-content/70">
+                    Don’t have an account?
+                    <a class="link link-primary font-medium" asp-action="Register">Register</a>
+                </p>
+            </div>
+        </div>
     </div>
-</form>
-
-<p>
-    Don't have an account? <a asp-action="Register">Register</a>
-</p>
+</section>

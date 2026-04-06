@@ -4,20 +4,30 @@
     ViewData["Title"] = "Register";
 }
 
-<h1>Register</h1>
+<section class="flex min-h-[70vh] items-center justify-center">
+    <div class="w-full max-w-md">
+        <div class="card bg-base-100 shadow-2xl ring-1 ring-base-300/60">
+            <div class="card-body gap-6">
+                <div class="space-y-2 text-center">
+                    <h1 class="text-3xl font-black tracking-tight">Create your account</h1>
+                    <p class="text-sm text-base-content/70">Sign up to start curating your own digital bookshelf.</p>
+                </div>
 
-<form asp-action="Register" method="post">
-    <div asp-validation-summary="ModelOnly"></div>
+                <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
 
-    <form-text asp-for="Email" />
-    <form-text asp-for="Password" />
-    <form-text asp-for="ConfirmPassword" />
+                <form asp-action="Register" method="post" class="space-y-5">
+                    <form-text asp-for="Email" />
+                    <form-text asp-for="Password" />
+                    <form-text asp-for="ConfirmPassword" />
 
-    <div>
-        <input type="submit" value="Register" />
+                    <button type="submit" class="btn btn-primary w-full">Register</button>
+                </form>
+
+                <p class="text-center text-sm text-base-content/70">
+                    Already have an account?
+                    <a class="link link-primary font-medium" asp-action="Login">Log in</a>
+                </p>
+            </div>
+        </div>
     </div>
-</form>
-
-<p>
-    Already have an account? <a asp-action="Login">Log in</a>
-</p>
+</section>

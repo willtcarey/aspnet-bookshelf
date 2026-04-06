@@ -4,20 +4,38 @@
     ViewData["Title"] = "Delete Book";
 }
 
-<h1>Delete Book</h1>
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight text-error">Delete book</h1>
+        <p class="text-base-content/75">This action removes the book from your library.</p>
+    </div>
 
-<p>Are you sure you want to delete <strong>@Model.Title</strong> by @Model.Author.Name?</p>
+    <div class="alert alert-warning shadow-lg">
+        <span>Are you sure you want to delete <strong>@Model.Title</strong> by @Model.Author.Name?</span>
+    </div>
 
-<dl>
-    <dt>ISBN</dt>
-    <dd>@Model.Isbn</dd>
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-6">
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div>
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
+                    <div class="mt-2 font-semibold">@Model.Author.Name</div>
+                </div>
+                <div>
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">ISBN</div>
+                    <div class="mt-2 font-semibold">@(string.IsNullOrWhiteSpace(Model.Isbn) ? "Not provided" : Model.Isbn)</div>
+                </div>
+                <div>
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">Year</div>
+                    <div class="mt-2 font-semibold">@(Model.Year?.ToString() ?? "Unknown")</div>
+                </div>
+            </div>
 
-    <dt>Year</dt>
-    <dd>@Model.Year</dd>
-</dl>
-
-<form asp-action="Delete">
-    <input type="hidden" asp-for="Id" />
-    <input type="submit" value="Delete" /> |
-    <a asp-action="Index">Back to List</a>
-</form>
+            <form asp-action="Delete" class="flex flex-wrap gap-3 pt-2">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-error">Delete book</button>
+                <a class="btn btn-ghost" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

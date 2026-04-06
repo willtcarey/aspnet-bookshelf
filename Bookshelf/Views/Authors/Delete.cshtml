@@ -4,17 +4,48 @@
     ViewData["Title"] = "Delete Author";
 }
 
-<h1>Delete Author</h1>
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight text-error">Delete author</h1>
+        <p class="text-base-content/75">Remove this author from your library.</p>
+    </div>
 
-<p>Are you sure you want to delete <strong>@Model.Name</strong>?</p>
+    <div class="alert alert-warning shadow-lg">
+        <span>Are you sure you want to delete <strong>@Model.Name</strong>?</span>
+    </div>
 
-@if (Model.Books.Any())
-{
-    <p><strong>Warning:</strong> This will also delete @Model.Books.Count book(s).</p>
-}
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            @if (Model.Books.Any())
+            {
+                <div class="alert alert-error">
+                    <span>This will also affect @Model.Books.Count linked book(s).</span>
+                </div>
+            }
 
-<form asp-action="Delete">
-    <input type="hidden" asp-for="Id" />
-    <input type="submit" value="Delete" /> |
-    <a asp-action="Index">Back to List</a>
-</form>
+            <div>
+                <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
+                <div class="mt-2 text-xl font-semibold">@Model.Name</div>
+            </div>
+
+            @if (Model.Books.Any())
+            {
+                <div>
+                    <div class="mb-3 text-sm uppercase tracking-wide text-base-content/60">Linked books</div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var book in Model.Books.OrderBy(book => book.Title))
+                        {
+                            <span class="badge badge-outline">@book.Title</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <form asp-action="Delete" class="flex flex-wrap gap-3 pt-2">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-error">Delete author</button>
+                <a class="btn btn-ghost" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

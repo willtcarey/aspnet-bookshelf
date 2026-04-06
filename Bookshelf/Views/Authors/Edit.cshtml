@@ -4,19 +4,26 @@
     ViewData["Title"] = "Edit Author";
 }
 
-<h1>Edit Author</h1>
-
-<form asp-action="Edit">
-    <div asp-validation-summary="ModelOnly"></div>
-    <input type="hidden" asp-for="Id" />
-
-    <form-text asp-for="Name" />
-
-    <div>
-        <input type="submit" value="Save" />
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-black tracking-tight">Edit author</h1>
+        <p class="text-base-content/75">Update the author details used across your books.</p>
     </div>
-</form>
 
-<p>
-    <a asp-action="Index">Back to List</a>
-</p>
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-action="Edit" class="space-y-5">
+                <input type="hidden" asp-for="Id" />
+                <form-text asp-for="Name" />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <a class="btn btn-ghost" asp-action="Details" asp-route-id="@Model.Id">View details</a>
+                    <a class="btn btn-ghost" asp-action="Index">Back to authors</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
