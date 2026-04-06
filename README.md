@@ -20,7 +20,7 @@ Bookshelf lets users:
 - [x] **Dockerized Development** — Run the entire application in Docker with Docker Compose (`bbc811a`)
 - [x] **Database-Backed Models** — Books and Authors with Entity Framework Core (`bbd2690`)
 - [x] **Model Editing** — Full CRUD UI for managing books and authors (`bbd2690`)
-- [ ] **User Accounts** — Registration, login, logout, and authentication/authorization
+- [x] **User Accounts** — Registration, login, logout, and authentication/authorization (`f4e6424`)
 - [ ] **File Uploading** — Upload and display book cover images
 - [ ] **Front-End CSS Framework** — Integrate a CSS framework (e.g., Bootstrap or Tailwind) for styling
 - [ ] **Admin UI** — Add an admin area with a separate layout for managing site-wide data
