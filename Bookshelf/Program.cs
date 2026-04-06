@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
+using Bookshelf.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +26,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpLogging(o => {});
+builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 
 var app = builder.Build();
+
+app.Services.GetRequiredService<IFileStorage>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

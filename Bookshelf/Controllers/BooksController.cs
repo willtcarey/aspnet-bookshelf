@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
+using Bookshelf.Services;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -12,17 +13,22 @@ namespace Bookshelf.Controllers;
 public class BooksController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IFileStorage _fileStorage;
 
-    public BooksController(ApplicationDbContext context)
+    public BooksController(ApplicationDbContext context, IFileStorage fileStorage)
     {
         _context = context;
+        _fileStorage = fileStorage;
     }
 
     // GET: Books
     [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
-        var books = await _context.Books.Include(b => b.Author).ToListAsync();
+        var books = await _context.Books
+            .Include(b => b.Author)
+            .ToListAsync();
+
         return View(books);
     }
 
@@ -42,13 +48,13 @@ public class BooksController : Controller
     }
 
     // GET: Books/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        // TODO: Loading the authors list feels like it should move out of the controller
         var viewModel = new BookFormViewModel
         {
-            Authors = new SelectList(_context.Authors, "Id", "Name")
+            Authors = await BuildAuthorsSelectListAsync()
         };
+
         return View(viewModel);
     }
 
@@ -59,19 +65,37 @@ public class BooksController : Controller
     {
         if (ModelState.IsValid)
         {
-            var book = new Book
+            string? coverImagePath = null;
+
+            try
             {
-                Title = viewModel.Title,
-                Isbn = viewModel.Isbn,
-                Year = viewModel.Year,
-                AuthorId = viewModel.AuthorId
-            };
-            _context.Add(book);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+                coverImagePath = await SaveCoverImageAsync(viewModel.CoverImage);
+
+                var book = new Book
+                {
+                    Title = viewModel.Title,
+                    Isbn = viewModel.Isbn,
+                    Year = viewModel.Year,
+                    AuthorId = viewModel.AuthorId,
+                    CoverImagePath = coverImagePath
+                };
+
+                _context.Add(book);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                if (!string.IsNullOrWhiteSpace(coverImagePath))
+                {
+                    await _fileStorage.DeleteAsync(coverImagePath);
+                }
+
+                throw;
+            }
         }
 
-        viewModel.Authors = new SelectList(_context.Authors, "Id", "Name", viewModel.AuthorId);
+        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -90,8 +114,10 @@ public class BooksController : Controller
             Isbn = book.Isbn,
             Year = book.Year,
             AuthorId = book.AuthorId,
-            Authors = new SelectList(_context.Authors, "Id", "Name", book.AuthorId)
+            ExistingCoverImagePath = book.CoverImagePath,
+            Authors = await BuildAuthorsSelectListAsync(book.AuthorId)
         };
+
         return View(viewModel);
     }
 
@@ -102,15 +128,24 @@ public class BooksController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
+        var book = await _context.Books.FindAsync(id);
+        if (book == null) return NotFound();
+
         if (ModelState.IsValid)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
+            var previousCoverImagePath = book.CoverImagePath;
+            string? newCoverImagePath = null;
 
             book.Title = viewModel.Title;
             book.Isbn = viewModel.Isbn;
             book.Year = viewModel.Year;
             book.AuthorId = viewModel.AuthorId;
+
+            if (viewModel.CoverImage is { Length: > 0 })
+            {
+                newCoverImagePath = await SaveCoverImageAsync(viewModel.CoverImage);
+                book.CoverImagePath = newCoverImagePath;
+            }
 
             try
             {
@@ -118,14 +153,35 @@ public class BooksController : Controller
             }
             catch (DbUpdateConcurrencyException)
             {
+                if (!string.IsNullOrWhiteSpace(newCoverImagePath))
+                {
+                    await _fileStorage.DeleteAsync(newCoverImagePath);
+                }
+
                 if (!await _context.Books.AnyAsync(b => b.Id == id))
                     return NotFound();
                 throw;
             }
+            catch
+            {
+                if (!string.IsNullOrWhiteSpace(newCoverImagePath))
+                {
+                    await _fileStorage.DeleteAsync(newCoverImagePath);
+                }
+
+                throw;
+            }
+
+            if (!string.IsNullOrWhiteSpace(newCoverImagePath) && !string.IsNullOrWhiteSpace(previousCoverImagePath))
+            {
+                await _fileStorage.DeleteAsync(previousCoverImagePath);
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
-        viewModel.Authors = new SelectList(_context.Authors, "Id", "Name", viewModel.AuthorId);
+        viewModel.ExistingCoverImagePath = book.CoverImagePath;
+        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -151,9 +207,37 @@ public class BooksController : Controller
         var book = await _context.Books.FindAsync(id);
         if (book != null)
         {
+            var coverImagePath = book.CoverImagePath;
+
             _context.Books.Remove(book);
             await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(coverImagePath))
+            {
+                await _fileStorage.DeleteAsync(coverImagePath);
+            }
         }
+
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
+    {
+        var authors = await _context.Authors
+            .OrderBy(author => author.Name)
+            .ToListAsync();
+
+        return new SelectList(authors, "Id", "Name", selectedAuthorId);
+    }
+
+    private async Task<string?> SaveCoverImageAsync(IFormFile? coverImage)
+    {
+        if (coverImage is not { Length: > 0 })
+        {
+            return null;
+        }
+
+        await using var stream = coverImage.OpenReadStream();
+        return await _fileStorage.SaveAsync(stream, coverImage.FileName, coverImage.ContentType);
     }
 }

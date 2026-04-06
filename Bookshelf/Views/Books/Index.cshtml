@@ -42,7 +42,20 @@
                             {
                                 <tr>
                                     <td>
-                                        <div class="font-semibold">@book.Title</div>
+                                        <div class="flex items-center gap-4">
+                                            @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
+                                            {
+                                                <img src="@book.CoverImagePath" alt="Cover for @book.Title" class="h-16 w-12 rounded-md object-cover shadow" />
+                                            }
+                                            else
+                                            {
+                                                <div class="flex h-16 w-12 items-center justify-center rounded-md bg-base-200 text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-base-content/45">
+                                                    No cover
+                                                </div>
+                                            }
+
+                                            <div class="font-semibold">@book.Title</div>
+                                        </div>
                                     </td>
                                     <td>
                                         <a class="link link-hover font-medium" asp-controller="Authors" asp-action="Details" asp-route-id="@book.AuthorId">@book.Author.Name</a>

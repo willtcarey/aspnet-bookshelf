@@ -6,6 +6,7 @@ public class Book
     public string Title { get; set; } = string.Empty;
     public string? Isbn { get; set; }
     public int? Year { get; set; }
+    public string? CoverImagePath { get; set; }
 
     public int AuthorId { get; set; }
     public Author Author { get; set; } = null!;

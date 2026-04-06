@@ -8,7 +8,7 @@
 <div class="mx-auto flex max-w-3xl flex-col gap-6">
     <div class="space-y-2">
         <h1 class="text-3xl font-black tracking-tight">Add a book</h1>
-        <p class="text-base-content/75">Create a new library entry with its author, ISBN, and publication year.</p>
+        <p class="text-base-content/75">Create a new library entry with its author, ISBN, publication year, and cover image.</p>
     </div>
 
     @if (!hasAuthors)
@@ -25,11 +25,18 @@
         <div class="card-body gap-5">
             <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
 
-            <form asp-action="Create" class="space-y-5">
+            <form asp-action="Create" enctype="multipart/form-data" class="space-y-5">
                 <form-text asp-for="Title" />
                 <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
                 <form-text asp-for="Isbn" label="ISBN" />
                 <form-text asp-for="Year" />
+
+                <fieldset class="fieldset w-full">
+                    <label asp-for="CoverImage" class="fieldset-legend"></label>
+                    <input asp-for="CoverImage" type="file" accept="image/*" class="file-input file-input-bordered w-full" />
+                    <label class="label text-base-content/60">Optional. Upload a cover image for this book.</label>
+                    <span asp-validation-for="CoverImage" class="label text-error"></span>
+                </fieldset>
 
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="btn btn-primary" disabled="@(!hasAuthors)">Create book</button>

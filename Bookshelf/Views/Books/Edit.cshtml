@@ -7,20 +7,43 @@
 <div class="mx-auto flex max-w-3xl flex-col gap-6">
     <div class="space-y-2">
         <h1 class="text-3xl font-black tracking-tight">Edit book</h1>
-        <p class="text-base-content/75">Update the details for this title and keep your collection accurate.</p>
+        <p class="text-base-content/75">Update the details for this title, including its cover image.</p>
     </div>
 
     <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
         <div class="card-body gap-5">
             <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
 
-            <form asp-action="Edit" class="space-y-5">
+            <form asp-action="Edit" enctype="multipart/form-data" class="space-y-5">
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ExistingCoverImagePath" />
 
                 <form-text asp-for="Title" />
                 <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
                 <form-text asp-for="Isbn" label="ISBN" />
                 <form-text asp-for="Year" />
+
+                <fieldset class="fieldset w-full gap-3">
+                    <label asp-for="CoverImage" class="fieldset-legend"></label>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ExistingCoverImagePath))
+                    {
+                        <div class="flex items-center gap-4 rounded-2xl bg-base-100 p-4 ring-1 ring-base-300/60">
+                            <img src="@Model.ExistingCoverImagePath" alt="Current cover for @Model.Title" class="h-24 w-16 rounded-lg object-cover shadow" />
+                            <div class="text-sm text-base-content/70">
+                                <div class="font-semibold text-base-content">Current cover</div>
+                                <div>Upload a new image to replace it.</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <label class="label text-base-content/60">No cover image uploaded yet.</label>
+                    }
+
+                    <input asp-for="CoverImage" type="file" accept="image/*" class="file-input file-input-bordered w-full" />
+                    <span asp-validation-for="CoverImage" class="label text-error"></span>
+                </fieldset>
 
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="btn btn-primary">Save changes</button>
