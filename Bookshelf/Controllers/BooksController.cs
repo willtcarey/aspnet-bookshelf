@@ -155,6 +155,10 @@ public class BooksController : Controller
         await _context.SaveChangesAsync();
     }
 
+    // TODO: This builds view-specific presentation data (SelectList) from a DB query.
+    // Should this live somewhere else? Every controller that needs an author dropdown
+    // would duplicate this. Could move to a shared service, a view component, or a
+    // method on the DbContext/repository.
     private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
     {
         var authors = await _context.Authors
