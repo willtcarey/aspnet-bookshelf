@@ -1,5 +1,7 @@
 # Notes
 
+> this file is for the user to edit. Only add notes when the user asks
+
 - ASP.NET MVC (`dotnet new mvc`) installs jQuery and Bootstrap by default
 - `Properties/launchSettings.json` configures how the app launches through Visual Studio. We use dip for that instead
 - `Bookshelf.csproj` is like a `tsconfig.json` or `package.json` — project configuration for development (target framework, compiler settings, package dependencies)
@@ -19,6 +21,6 @@
 - Routes in views are generated using ASP Tag Helpers — `asp-controller`, `asp-action`, `asp-route-id`, etc. These are `asp-` prefixed attributes on HTML elements that Razor compiles into proper URLs. `asp-for` on form elements is strongly typed against the view's `@model`, but `asp-controller` and `asp-action` are just strings with no compile-time verification
 - Custom tag helpers let you create reusable HTML components. You write a C# class extending `TagHelper`, use `[HtmlTargetElement]` to define the element name, and inject `IHtmlGenerator` to produce standard ASP.NET form elements. Register them in `_ViewImports.cshtml` with `@addTagHelper *, YourAssemblyName`. This is how we DRY up repeated form field markup (label + input + validation) into a single `<form-field asp-for="..." />` element
 - Partial views work like Rails partials. Create a `.cshtml` file (conventionally `_`-prefixed, e.g. `_Navigation.cshtml`) in `Views/Shared/` and render it with `<partial name="_Navigation" />` (tag helper syntax) or `@await Html.PartialAsync("_Navigation")` (async helper syntax). Both are server-side only — the full HTML is composed on the server and sent in a single response. The tag helper internally calls the async path anyway, so for simple markup-only partials they're identical. `Html.PartialAsync` is worth using explicitly when a partial does I/O (e.g. database queries via a view component) so the thread is released back to the pool during the wait. Partials inherit the parent's model/ViewData by default, or you can pass a specific model via `<partial name="_Foo" model="someModel" />`
-- Custom image delivery can live in a normal MVC controller. A route like `/images/{*path}?w=...&h=...` can validate the incoming upload path, read the original through an injected service, write resized variants to disk, and return them with cache headers instead of linking views straight to static files under `wwwroot/uploads`
-- Overriding `SaveChangesAsync` on `ApplicationDbContext` lets you hook into the entity lifecycle using the change tracker. We use this to automatically manage file cleanup for properties marked with a `[FileAttachment]` attribute — detecting when file paths are added, changed, or deleted, and handling the corresponding file operations. This keeps controllers simple (just save the file and set the path) instead of requiring every controller to independently manage file storage rollback and cleanup
+- ASP.NET has no image/file upload framework out of the box — you have to build your own. This project has a direct upload system built in
+
 

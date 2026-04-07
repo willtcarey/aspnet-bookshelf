@@ -38,7 +38,7 @@
                             <div class="flex items-start gap-4">
                                 @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
                                 {
-                                    <cover-image path="@book.CoverImagePath" width="56" height="80" alt="Cover for @book.Title" class="h-20 w-14 rounded-lg object-cover shadow" loading="lazy" />
+                                    <image-upload path="@book.CoverImagePath" width="56" height="80" alt="Cover for @book.Title" class="h-20 w-14 rounded-lg object-cover shadow" loading="lazy" />
                                 }
                                 else
                                 {

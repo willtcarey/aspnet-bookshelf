@@ -19,13 +19,21 @@ public class ImageUpload
 {
     private const int MaxResizeDimension = 4000;
     private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
-    private const string DefaultFormat = "webp";
     private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+    private static readonly ImageFormat JpgFormat = new("jpg", ".jpg", "image/jpeg");
+    private static readonly ImageFormat PngFormat = new("png", ".png", "image/png");
+    private static readonly ImageFormat WebpFormat = new("webp", ".webp", "image/webp");
+    private static readonly IReadOnlyDictionary<string, ImageFormat> Formats = new Dictionary<string, ImageFormat>(StringComparer.OrdinalIgnoreCase)
+    {
+        [JpgFormat.Name] = JpgFormat,
+        ["jpeg"] = JpgFormat,
+        [PngFormat.Name] = PngFormat,
+        [WebpFormat.Name] = WebpFormat
+    };
 
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
-    private readonly string[] _uploadsPathSegments;
-    private readonly string _uploadsRootPath;
+    private readonly string _uploadsPath;
     private readonly string _cacheRootPath;
 
     public ImageUpload(
@@ -43,17 +51,11 @@ public class ImageUpload
             webRootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
         }
 
-        var configuredUploadPath = configuration["FileStorage:UploadsPath"];
-        var uploadPath = string.IsNullOrWhiteSpace(configuredUploadPath)
-            ? "uploads"
-            : configuredUploadPath.Trim().Trim('/', '\\');
-
-        _uploadsPathSegments = uploadPath
-            .Replace('\\', '/')
-            .Split('/', StringSplitOptions.RemoveEmptyEntries);
-
-        _uploadsRootPath = Path.Combine(webRootPath, Path.Combine(_uploadsPathSegments));
-        _cacheRootPath = Path.Combine(_uploadsRootPath, ".cache");
+        _uploadsPath = NormalizeUploadsPath(configuration["FileStorage:UploadsPath"]);
+        _cacheRootPath = Path.Combine(
+            webRootPath,
+            _uploadsPath.Replace('/', Path.DirectorySeparatorChar),
+            ".cache");
     }
 
     public async Task<UploadResult> SaveAsync(IFormFile? file)
@@ -83,7 +85,7 @@ public class ImageUpload
         string? path,
         int? width,
         int? height,
-        string format = DefaultFormat)
+        string format = "webp")
     {
         var normalizedPath = NormalizePath(path);
         if (normalizedPath is null)
@@ -96,25 +98,19 @@ public class ImageUpload
             return new ImageErrorResult($"Width and height must be between 1 and {MaxResizeDimension}.");
         }
 
-        var sourceFilePath = BuildSourceFilePath(normalizedPath);
-        if (!File.Exists(sourceFilePath))
-        {
-            return new ImageNotFoundResult();
-        }
-
         var sourcePath = $"/{normalizedPath}";
         if (!width.HasValue && !height.HasValue)
         {
             return await GetOriginalAsync(sourcePath);
         }
 
-        var normalizedFormat = NormalizeFormat(format);
-        if (normalizedFormat is null)
+        var imageFormat = ResolveFormat(format);
+        if (imageFormat is null)
         {
             return new ImageErrorResult("Unsupported image format.");
         }
 
-        return await GetResizedAsync(normalizedPath, sourcePath, width, height, normalizedFormat);
+        return await GetResizedAsync(normalizedPath, sourcePath, width, height, imageFormat);
     }
 
     private async Task<ImageResult> GetOriginalAsync(string sourcePath)
@@ -133,12 +129,12 @@ public class ImageUpload
         string sourcePath,
         int? width,
         int? height,
-        string format)
+        ImageFormat format)
     {
         var cachePath = BuildCachePath(normalizedPath, width, height, format);
         if (File.Exists(cachePath))
         {
-            return new ImageFileResult(cachePath, GetContentTypeForFormat(format));
+            return new ImageFileResult(cachePath, format.ContentType);
         }
 
         await using var sourceStream = await _fileStorage.GetAsync(sourcePath);
@@ -153,7 +149,7 @@ public class ImageUpload
         var resizeHeight = height ?? MaxResizeDimension;
 
         await using var resizedStream = await _imageProcessor.ResizeAsync(
-            sourceStream, resizeWidth, resizeHeight, format);
+            sourceStream, resizeWidth, resizeHeight, format.Name);
 
         var temporaryPath = $"{cachePath}.{Guid.NewGuid():N}.tmp";
 
@@ -179,7 +175,7 @@ public class ImageUpload
             }
         }
 
-        return new ImageFileResult(cachePath, GetContentTypeForFormat(format));
+        return new ImageFileResult(cachePath, format.ContentType);
     }
 
     private string? NormalizePath(string? path)
@@ -189,30 +185,23 @@ public class ImageUpload
             return null;
         }
 
-        var decodedPath = Uri.UnescapeDataString(path);
-        if (decodedPath.Contains('\0'))
-        {
-            return null;
-        }
-
-        var segments = decodedPath
+        var normalizedPath = Uri.UnescapeDataString(path)
             .Replace('\\', '/')
-            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            .Trim();
 
-        if (segments.Length != _uploadsPathSegments.Length + 1)
+        if (normalizedPath.Contains('\0'))
         {
             return null;
         }
 
-        for (var i = 0; i < _uploadsPathSegments.Length; i++)
+        normalizedPath = normalizedPath.Trim('/');
+        var prefix = $"{_uploadsPath}/";
+        if (!normalizedPath.StartsWith(prefix, StringComparison.Ordinal))
         {
-            if (!string.Equals(segments[i], _uploadsPathSegments[i], StringComparison.Ordinal))
-            {
-                return null;
-            }
+            return null;
         }
 
-        var fileName = segments[^1];
+        var fileName = normalizedPath[prefix.Length..];
         if (string.IsNullOrWhiteSpace(fileName)
             || fileName is "." or ".."
             || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
@@ -220,7 +209,7 @@ public class ImageUpload
             return null;
         }
 
-        return string.Join('/', _uploadsPathSegments.Append(fileName));
+        return $"{_uploadsPath}/{fileName}";
     }
 
     private static bool IsValidDimension(int? value)
@@ -228,50 +217,39 @@ public class ImageUpload
         return !value.HasValue || (value.Value >= 1 && value.Value <= MaxResizeDimension);
     }
 
-    private string BuildSourceFilePath(string normalizedPath)
-    {
-        return Path.Combine(_uploadsRootPath, Path.GetFileName(normalizedPath));
-    }
-
-    private string BuildCachePath(string normalizedPath, int? width, int? height, string format)
+    private string BuildCachePath(string normalizedPath, int? width, int? height, ImageFormat format)
     {
         var variantFolder = $"{width?.ToString() ?? "auto"}x{height?.ToString() ?? "auto"}";
         var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
-        var extension = GetExtensionForFormat(format);
 
-        return Path.Combine(_cacheRootPath, variantFolder, $"{fileName}{extension}");
+        return Path.Combine(_cacheRootPath, variantFolder, $"{fileName}{format.Extension}");
     }
 
-    private static string? NormalizeFormat(string? format)
+    private static string NormalizeUploadsPath(string? configuredUploadPath)
     {
-        return format?.Trim().ToLowerInvariant() switch
-        {
-            null or "" => DefaultFormat,
-            "jpg" or "jpeg" => "jpg",
-            "png" => "png",
-            "webp" => "webp",
-            _ => null
-        };
+        var uploadPath = string.IsNullOrWhiteSpace(configuredUploadPath)
+            ? "uploads"
+            : configuredUploadPath.Trim();
+
+        var normalizedUploadPath = uploadPath
+            .Replace('\\', '/')
+            .Trim('/');
+
+        return string.IsNullOrWhiteSpace(normalizedUploadPath)
+            ? "uploads"
+            : normalizedUploadPath;
     }
 
-    private static string GetExtensionForFormat(string format)
+    private static ImageFormat? ResolveFormat(string? format)
     {
-        return format switch
+        if (string.IsNullOrWhiteSpace(format))
         {
-            "jpg" => ".jpg",
-            "png" => ".png",
-            _ => ".webp"
-        };
-    }
+            return WebpFormat;
+        }
 
-    private static string GetContentTypeForFormat(string format)
-    {
-        return format switch
-        {
-            "jpg" => "image/jpeg",
-            "png" => "image/png",
-            _ => "image/webp"
-        };
+        return Formats.TryGetValue(format.Trim(), out var imageFormat)
+            ? imageFormat
+            : null;
     }
 
     private static string GetContentTypeFromPath(string path)
@@ -280,4 +258,6 @@ public class ImageUpload
             ? contentType
             : "application/octet-stream";
     }
+
+    private sealed record ImageFormat(string Name, string Extension, string ContentType);
 }

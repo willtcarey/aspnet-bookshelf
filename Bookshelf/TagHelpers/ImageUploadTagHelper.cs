@@ -3,8 +3,8 @@ using System.Text;
 
 namespace Bookshelf.TagHelpers;
 
-[HtmlTargetElement("cover-image", Attributes = "path")]
-public class CoverImageTagHelper : TagHelper
+[HtmlTargetElement("image-upload", Attributes = "path")]
+public class ImageUploadTagHelper : TagHelper
 {
     [HtmlAttributeName("path")]
     public string Path { get; set; } = string.Empty;
