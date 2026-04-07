@@ -8,7 +8,7 @@
 <div class="mx-auto flex max-w-3xl flex-col gap-6">
     <div class="space-y-2">
         <h1 class="text-3xl font-black tracking-tight">Add a book</h1>
-        <p class="text-base-content/75">Create a new library entry with its author, ISBN, and publication year.</p>
+        <p class="text-base-content/75">Create a new library entry with its author, ISBN, publication year, and cover image.</p>
     </div>
 
     @if (!hasAuthors)
@@ -30,6 +30,8 @@
                 <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
                 <form-text asp-for="Isbn" label="ISBN" />
                 <form-text asp-for="Year" />
+
+                <form-file asp-for="CoverImagePath" label="Cover image" accept="image/*" hint="Optional. Upload a cover image for this book." />
 
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="btn btn-primary" disabled="@(!hasAuthors)">Create book</button>

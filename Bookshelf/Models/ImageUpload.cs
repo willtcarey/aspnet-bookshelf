@@ -1,0 +1,263 @@
+using Bookshelf.Services;
+using Microsoft.AspNetCore.StaticFiles;
+
+namespace Bookshelf.Models;
+
+public abstract record ImageResult;
+public record ImageStreamResult(Stream Stream, string ContentType) : ImageResult;
+public record ImageFileResult(string FilePath, string ContentType) : ImageResult;
+public record ImageNotFoundResult() : ImageResult;
+public record ImageErrorResult(string Message) : ImageResult;
+
+public record UploadResult(bool IsSuccess, string? Path, string? Error)
+{
+    public static UploadResult Success(string path) => new(true, path, null);
+    public static UploadResult Failure(string error) => new(false, null, error);
+}
+
+public class ImageUpload
+{
+    private const int MaxResizeDimension = 4000;
+    private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
+    private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+    private static readonly ImageFormat JpgFormat = new("jpg", ".jpg", "image/jpeg");
+    private static readonly ImageFormat PngFormat = new("png", ".png", "image/png");
+    private static readonly ImageFormat WebpFormat = new("webp", ".webp", "image/webp");
+    private static readonly IReadOnlyDictionary<string, ImageFormat> Formats = new Dictionary<string, ImageFormat>(StringComparer.OrdinalIgnoreCase)
+    {
+        [JpgFormat.Name] = JpgFormat,
+        ["jpeg"] = JpgFormat,
+        [PngFormat.Name] = PngFormat,
+        [WebpFormat.Name] = WebpFormat
+    };
+
+    private readonly IFileStorage _fileStorage;
+    private readonly IImageProcessor _imageProcessor;
+    private readonly string _uploadsPath;
+    private readonly string _cacheRootPath;
+
+    public ImageUpload(
+        IFileStorage fileStorage,
+        IImageProcessor imageProcessor,
+        IWebHostEnvironment environment,
+        IConfiguration configuration)
+    {
+        _fileStorage = fileStorage;
+        _imageProcessor = imageProcessor;
+
+        var webRootPath = environment.WebRootPath;
+        if (string.IsNullOrWhiteSpace(webRootPath))
+        {
+            webRootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
+        }
+
+        _uploadsPath = NormalizeUploadsPath(configuration["FileStorage:UploadsPath"]);
+        _cacheRootPath = Path.Combine(
+            webRootPath,
+            _uploadsPath.Replace('/', Path.DirectorySeparatorChar),
+            ".cache");
+    }
+
+    public async Task<UploadResult> SaveAsync(IFormFile? file)
+    {
+        if (file is not { Length: > 0 })
+        {
+            return UploadResult.Failure("No file provided.");
+        }
+
+        if (file.Length > MaxFileSize)
+        {
+            return UploadResult.Failure("File size must not exceed 10 MB.");
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return UploadResult.Failure("Only image files are accepted.");
+        }
+
+        await using var stream = file.OpenReadStream();
+        var path = await _fileStorage.SaveAsync(stream, file.FileName, file.ContentType);
+
+        return UploadResult.Success(path);
+    }
+
+    public async Task<ImageResult> GetAsync(
+        string? path,
+        int? width,
+        int? height,
+        string format = "webp")
+    {
+        var normalizedPath = NormalizePath(path);
+        if (normalizedPath is null)
+        {
+            return new ImageNotFoundResult();
+        }
+
+        if (!IsValidDimension(width) || !IsValidDimension(height))
+        {
+            return new ImageErrorResult($"Width and height must be between 1 and {MaxResizeDimension}.");
+        }
+
+        var sourcePath = $"/{normalizedPath}";
+        if (!width.HasValue && !height.HasValue)
+        {
+            return await GetOriginalAsync(sourcePath);
+        }
+
+        var imageFormat = ResolveFormat(format);
+        if (imageFormat is null)
+        {
+            return new ImageErrorResult("Unsupported image format.");
+        }
+
+        return await GetResizedAsync(normalizedPath, sourcePath, width, height, imageFormat);
+    }
+
+    private async Task<ImageResult> GetOriginalAsync(string sourcePath)
+    {
+        var stream = await _fileStorage.GetAsync(sourcePath);
+        if (stream is null)
+        {
+            return new ImageNotFoundResult();
+        }
+
+        return new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
+    }
+
+    private async Task<ImageResult> GetResizedAsync(
+        string normalizedPath,
+        string sourcePath,
+        int? width,
+        int? height,
+        ImageFormat format)
+    {
+        var cachePath = BuildCachePath(normalizedPath, width, height, format);
+        if (File.Exists(cachePath))
+        {
+            return new ImageFileResult(cachePath, format.ContentType);
+        }
+
+        await using var sourceStream = await _fileStorage.GetAsync(sourcePath);
+        if (sourceStream is null)
+        {
+            return new ImageNotFoundResult();
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+
+        var resizeWidth = width ?? MaxResizeDimension;
+        var resizeHeight = height ?? MaxResizeDimension;
+
+        await using var resizedStream = await _imageProcessor.ResizeAsync(
+            sourceStream, resizeWidth, resizeHeight, format.Name);
+
+        var temporaryPath = $"{cachePath}.{Guid.NewGuid():N}.tmp";
+
+        try
+        {
+            await using (var output = File.Create(temporaryPath))
+            {
+                if (resizedStream.CanSeek)
+                {
+                    resizedStream.Position = 0;
+                }
+
+                await resizedStream.CopyToAsync(output);
+            }
+
+            File.Move(temporaryPath, cachePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
+
+        return new ImageFileResult(cachePath, format.ContentType);
+    }
+
+    private string? NormalizePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var normalizedPath = Uri.UnescapeDataString(path)
+            .Replace('\\', '/')
+            .Trim();
+
+        if (normalizedPath.Contains('\0'))
+        {
+            return null;
+        }
+
+        normalizedPath = normalizedPath.Trim('/');
+        var prefix = $"{_uploadsPath}/";
+        if (!normalizedPath.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var fileName = normalizedPath[prefix.Length..];
+        if (string.IsNullOrWhiteSpace(fileName)
+            || fileName is "." or ".."
+            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return $"{_uploadsPath}/{fileName}";
+    }
+
+    private static bool IsValidDimension(int? value)
+    {
+        return !value.HasValue || (value.Value >= 1 && value.Value <= MaxResizeDimension);
+    }
+
+    private string BuildCachePath(string normalizedPath, int? width, int? height, ImageFormat format)
+    {
+        var variantFolder = $"{width?.ToString() ?? "auto"}x{height?.ToString() ?? "auto"}";
+        var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
+
+        return Path.Combine(_cacheRootPath, variantFolder, $"{fileName}{format.Extension}");
+    }
+
+    private static string NormalizeUploadsPath(string? configuredUploadPath)
+    {
+        var uploadPath = string.IsNullOrWhiteSpace(configuredUploadPath)
+            ? "uploads"
+            : configuredUploadPath.Trim();
+
+        var normalizedUploadPath = uploadPath
+            .Replace('\\', '/')
+            .Trim('/');
+
+        return string.IsNullOrWhiteSpace(normalizedUploadPath)
+            ? "uploads"
+            : normalizedUploadPath;
+    }
+
+    private static ImageFormat? ResolveFormat(string? format)
+    {
+        if (string.IsNullOrWhiteSpace(format))
+        {
+            return WebpFormat;
+        }
+
+        return Formats.TryGetValue(format.Trim(), out var imageFormat)
+            ? imageFormat
+            : null;
+    }
+
+    private static string GetContentTypeFromPath(string path)
+    {
+        return ContentTypeProvider.TryGetContentType(path, out var contentType)
+            ? contentType
+            : "application/octet-stream";
+    }
+
+    private sealed record ImageFormat(string Name, string Extension, string ContentType);
+}

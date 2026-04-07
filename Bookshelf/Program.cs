@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
+using Bookshelf.Models;
+using Bookshelf.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +27,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpLogging(o => {});
+builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+builder.Services.AddSingleton<IImageProcessor, ImageSharpImageProcessor>();
+builder.Services.AddSingleton<ImageUpload>();
 
 var app = builder.Build();
+
+app.Services.GetRequiredService<IFileStorage>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

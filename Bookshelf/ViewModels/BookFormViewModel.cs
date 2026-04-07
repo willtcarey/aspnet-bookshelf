@@ -10,5 +10,10 @@ public class BookFormViewModel
     public int? Year { get; set; }
     public int AuthorId { get; set; }
 
+    /// <summary>
+    /// Storage path for the cover image, submitted via a hidden field after direct upload.
+    /// </summary>
+    public string? CoverImagePath { get; set; }
+
     public SelectList? Authors { get; set; }
 }

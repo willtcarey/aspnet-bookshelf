@@ -5,7 +5,7 @@
     var canManage = User.Identity?.IsAuthenticated == true;
 }
 
-<div class="mx-auto flex max-w-3xl flex-col gap-6">
+<div class="mx-auto flex max-w-4xl flex-col gap-6">
     <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div class="space-y-2">
             <div class="badge badge-primary badge-outline">Book</div>
@@ -22,20 +22,37 @@
         </div>
     </div>
 
-    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
-        <div class="card-body gap-6">
-            <div class="grid gap-4 sm:grid-cols-3">
-                <div class="rounded-2xl bg-base-200 p-4">
-                    <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
-                    <a class="mt-2 inline-block text-lg font-semibold link link-hover" asp-controller="Authors" asp-action="Details" asp-route-id="@Model.AuthorId">@Model.Author.Name</a>
-                </div>
-                <div class="rounded-2xl bg-base-200 p-4">
-                    <div class="text-sm uppercase tracking-wide text-base-content/60">ISBN</div>
-                    <div class="mt-2 text-lg font-semibold">@(string.IsNullOrWhiteSpace(Model.Isbn) ? "Not provided" : Model.Isbn)</div>
-                </div>
-                <div class="rounded-2xl bg-base-200 p-4">
-                    <div class="text-sm uppercase tracking-wide text-base-content/60">Year</div>
-                    <div class="mt-2 text-lg font-semibold">@(Model.Year?.ToString() ?? "Unknown")</div>
+    <div class="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+            <div class="card-body items-center justify-center">
+                @if (!string.IsNullOrWhiteSpace(Model.CoverImagePath))
+                {
+                    <image-upload path="@Model.CoverImagePath" width="384" height="576" alt="Cover for @Model.Title" class="w-full rounded-2xl object-cover shadow-lg" />
+                }
+                else
+                {
+                    <div class="flex aspect-[2/3] w-full items-center justify-center rounded-2xl bg-base-200 px-6 text-center text-sm font-semibold uppercase tracking-[0.2em] text-base-content/45">
+                        No cover image
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+            <div class="card-body gap-6">
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="rounded-2xl bg-base-200 p-4">
+                        <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
+                        <a class="mt-2 inline-block text-lg font-semibold link link-hover" asp-controller="Authors" asp-action="Details" asp-route-id="@Model.AuthorId">@Model.Author.Name</a>
+                    </div>
+                    <div class="rounded-2xl bg-base-200 p-4">
+                        <div class="text-sm uppercase tracking-wide text-base-content/60">ISBN</div>
+                        <div class="mt-2 text-lg font-semibold">@(string.IsNullOrWhiteSpace(Model.Isbn) ? "Not provided" : Model.Isbn)</div>
+                    </div>
+                    <div class="rounded-2xl bg-base-200 p-4">
+                        <div class="text-sm uppercase tracking-wide text-base-content/60">Year</div>
+                        <div class="mt-2 text-lg font-semibold">@(Model.Year?.ToString() ?? "Unknown")</div>
+                    </div>
                 </div>
             </div>
         </div>

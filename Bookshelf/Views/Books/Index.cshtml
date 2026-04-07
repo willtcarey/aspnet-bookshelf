@@ -24,58 +24,33 @@
 
     @if (Model.Any())
     {
-        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
-            <div class="card-body p-0">
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Author</th>
-                                <th>ISBN</th>
-                                <th>Year</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var book in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <div class="font-semibold">@book.Title</div>
-                                    </td>
-                                    <td>
-                                        <a class="link link-hover font-medium" asp-controller="Authors" asp-action="Details" asp-route-id="@book.AuthorId">@book.Author.Name</a>
-                                    </td>
-                                    <td>
-                                        <span class="text-sm text-base-content/70">@(string.IsNullOrWhiteSpace(book.Isbn) ? "—" : book.Isbn)</span>
-                                    </td>
-                                    <td>
-                                        @if (book.Year.HasValue)
-                                        {
-                                            <span class="badge badge-outline">@book.Year</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-sm text-base-content/60">Unknown</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="flex justify-end gap-2">
-                                            <a class="btn btn-ghost btn-sm" asp-action="Details" asp-route-id="@book.Id">Details</a>
-                                            @if (canManage)
-                                            {
-                                                <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@book.Id">Edit</a>
-                                                <a class="btn btn-ghost btn-sm text-error" asp-action="Delete" asp-route-id="@book.Id">Delete</a>
-                                            }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            @foreach (var book in Model)
+            {
+                <a asp-action="Details" asp-route-id="@book.Id" class="group flex flex-col gap-3">
+                    <div class="overflow-hidden rounded-xl shadow-lg ring-1 ring-base-300/60 transition-all duration-200 group-hover:shadow-xl group-hover:ring-primary/40">
+                        @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
+                        {
+                            <image-upload path="@book.CoverImagePath" width="320" height="480" alt="Cover for @book.Title" class="aspect-[2/3] w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" loading="lazy" />
+                        }
+                        else
+                        {
+                            <div class="flex aspect-[2/3] w-full items-center justify-center bg-base-200 px-4 text-center text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-base-content/45 transition-colors duration-200 group-hover:bg-base-300">
+                                No cover
+                            </div>
+                        }
+                    </div>
+
+                    <div class="flex flex-col gap-0.5 px-0.5">
+                        <h2 class="line-clamp-2 text-sm font-bold leading-snug group-hover:text-primary">@book.Title</h2>
+                        <p class="truncate text-xs text-base-content/70">@book.Author.Name</p>
+                        @if (book.Year.HasValue)
+                        {
+                            <p class="text-xs text-base-content/50">@book.Year</p>
+                        }
+                    </div>
+                </a>
+            }
         </div>
     }
     else

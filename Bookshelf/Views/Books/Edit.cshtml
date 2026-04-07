@@ -7,7 +7,7 @@
 <div class="mx-auto flex max-w-3xl flex-col gap-6">
     <div class="space-y-2">
         <h1 class="text-3xl font-black tracking-tight">Edit book</h1>
-        <p class="text-base-content/75">Update the details for this title and keep your collection accurate.</p>
+        <p class="text-base-content/75">Update the details for this title, including its cover image.</p>
     </div>
 
     <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
@@ -21,6 +21,8 @@
                 <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
                 <form-text asp-for="Isbn" label="ISBN" />
                 <form-text asp-for="Year" />
+
+                <form-file asp-for="CoverImagePath" label="Cover image" accept="image/*" hint="No cover image uploaded yet." />
 
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="btn btn-primary">Save changes</button>

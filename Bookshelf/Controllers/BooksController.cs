@@ -22,7 +22,10 @@ public class BooksController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
-        var books = await _context.Books.Include(b => b.Author).ToListAsync();
+        var books = await _context.Books
+            .Include(b => b.Author)
+            .ToListAsync();
+
         return View(books);
     }
 
@@ -42,13 +45,13 @@ public class BooksController : Controller
     }
 
     // GET: Books/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        // TODO: Loading the authors list feels like it should move out of the controller
         var viewModel = new BookFormViewModel
         {
-            Authors = new SelectList(_context.Authors, "Id", "Name")
+            Authors = await BuildAuthorsSelectListAsync()
         };
+
         return View(viewModel);
     }
 
@@ -59,19 +62,13 @@ public class BooksController : Controller
     {
         if (ModelState.IsValid)
         {
-            var book = new Book
-            {
-                Title = viewModel.Title,
-                Isbn = viewModel.Isbn,
-                Year = viewModel.Year,
-                AuthorId = viewModel.AuthorId
-            };
+            var book = new Book();
             _context.Add(book);
-            await _context.SaveChangesAsync();
+            await ApplyAndSaveAsync(book, viewModel);
             return RedirectToAction(nameof(Index));
         }
 
-        viewModel.Authors = new SelectList(_context.Authors, "Id", "Name", viewModel.AuthorId);
+        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -90,8 +87,10 @@ public class BooksController : Controller
             Isbn = book.Isbn,
             Year = book.Year,
             AuthorId = book.AuthorId,
-            Authors = new SelectList(_context.Authors, "Id", "Name", book.AuthorId)
+            CoverImagePath = book.CoverImagePath,
+            Authors = await BuildAuthorsSelectListAsync(book.AuthorId)
         };
+
         return View(viewModel);
     }
 
@@ -102,30 +101,16 @@ public class BooksController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
+        var book = await _context.Books.FindAsync(id);
+        if (book == null) return NotFound();
+
         if (ModelState.IsValid)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
-
-            book.Title = viewModel.Title;
-            book.Isbn = viewModel.Isbn;
-            book.Year = viewModel.Year;
-            book.AuthorId = viewModel.AuthorId;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await _context.Books.AnyAsync(b => b.Id == id))
-                    return NotFound();
-                throw;
-            }
+            await ApplyAndSaveAsync(book, viewModel);
             return RedirectToAction(nameof(Index));
         }
 
-        viewModel.Authors = new SelectList(_context.Authors, "Id", "Name", viewModel.AuthorId);
+        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -154,6 +139,31 @@ public class BooksController : Controller
             _context.Books.Remove(book);
             await _context.SaveChangesAsync();
         }
+
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task ApplyAndSaveAsync(Book book, BookFormViewModel viewModel)
+    {
+        book.Title = viewModel.Title;
+        book.Isbn = viewModel.Isbn;
+        book.Year = viewModel.Year;
+        book.AuthorId = viewModel.AuthorId;
+        book.CoverImagePath = viewModel.CoverImagePath;
+
+        await _context.SaveChangesAsync();
+    }
+
+    // TODO: This builds view-specific presentation data (SelectList) from a DB query.
+    // Should this live somewhere else? Every controller that needs an author dropdown
+    // would duplicate this. Could move to a shared service, a view component, or a
+    // method on the DbContext/repository.
+    private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
+    {
+        var authors = await _context.Authors
+            .OrderBy(author => author.Name)
+            .ToListAsync();
+
+        return new SelectList(authors, "Id", "Name", selectedAuthorId);
     }
 }
