@@ -1,0 +1,26 @@
+@model AdminAuthorFormViewModel
+
+@{
+    ViewData["Title"] = "Add Author";
+    ViewData["PageTitle"] = "Add an author";
+    ViewData["PageDescription"] = "Create an author record you can reuse across your library.";
+}
+
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-area="Admin" asp-controller="Authors" asp-action="Create" class="space-y-5">
+                <form-text asp-for="Name" />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary">Create author</button>
+                    <a class="btn btn-ghost" asp-area="Admin" asp-controller="Authors" asp-action="Index">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

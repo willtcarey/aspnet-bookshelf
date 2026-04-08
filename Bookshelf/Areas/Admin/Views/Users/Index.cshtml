@@ -1,0 +1,80 @@
+@using System.Security.Claims
+@model PaginatedList<AdminUserViewModel>
+
+@{
+    ViewData["Title"] = "Users";
+    ViewData["PageTitle"] = "Users";
+    ViewData["PageDescription"] = $"Manage user accounts and admin access. {Model.TotalCount} total.";
+    ViewData["EmptyTitle"] = "No users yet";
+    ViewData["EmptyDescription"] = "No user accounts have been created.";
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+
+<div class="flex flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    @if (Model.Any())
+    {
+        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+            <div class="card-body p-0">
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <sortable-column name="email" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Email</sortable-column>
+                                <th>Admin</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="font-semibold">@user.Email</div>
+                                    </td>
+                                    <td>
+                                        @if (user.IsAdmin)
+                                        {
+                                            <span class="badge badge-success">Yes</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-ghost">No</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <form asp-area="Admin" asp-controller="Users" asp-action="ToggleAdmin" method="post">
+                                                <input type="hidden" name="id" value="@user.Id" />
+                                                @if (user.IsAdmin)
+                                                {
+                                                    <button type="submit" class="btn btn-error btn-sm"
+                                                            @(user.Id == currentUserId ? "disabled" : "")>
+                                                        Revoke Admin
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        Make Admin
+                                                    </button>
+                                                }
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_Pagination" model="Model" />
+    }
+    else
+    {
+        <partial name="_EmptyState" />
+    }
+</div>

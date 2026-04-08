@@ -1,0 +1,76 @@
+@model PaginatedList<Book>
+
+@{
+    ViewData["Title"] = "Books";
+    ViewData["PageTitle"] = "Books";
+    ViewData["PageDescription"] = $"Manage the books in your library. {Model.TotalCount} total.";
+    ViewData["PageActionUrl"] = Url.Action("Create", "Books", new { area = "Admin" });
+    ViewData["PageActionText"] = "Add a book";
+    ViewData["EmptyTitle"] = "No books yet";
+    ViewData["EmptyDescription"] = "Add a book to start building your library catalog.";
+    ViewData["EmptyActionUrl"] = Url.Action("Create", "Books", new { area = "Admin" });
+    ViewData["EmptyActionText"] = "Add your first book";
+}
+
+<div class="flex flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    @if (Model.Any())
+    {
+        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+            <div class="card-body p-0">
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <th class="w-16">Cover</th>
+                                <sortable-column name="title" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Title</sortable-column>
+                                <sortable-column name="author" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Author</sortable-column>
+                                <sortable-column name="year" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Year</sortable-column>
+                                <th>ISBN</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var book in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
+                                        {
+                                            <image-upload path="@book.CoverImagePath" width="40" height="60" alt="Cover for @book.Title" class="h-15 w-10 rounded object-cover" />
+                                        }
+                                        else
+                                        {
+                                            <div class="flex h-15 w-10 items-center justify-center rounded bg-base-200 text-[0.5rem] font-semibold uppercase tracking-wider text-base-content/40">
+                                                N/A
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="font-semibold">@book.Title</div>
+                                    </td>
+                                    <td>@book.Author.Name</td>
+                                    <td>@(book.Year?.ToString() ?? "—")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(book.Isbn) ? "—" : book.Isbn)</td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a class="btn btn-ghost btn-sm" asp-area="Admin" asp-controller="Books" asp-action="Edit" asp-route-id="@book.Id">Edit</a>
+                                            <a class="btn btn-ghost btn-sm text-error" asp-area="Admin" asp-controller="Books" asp-action="Delete" asp-route-id="@book.Id">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_Pagination" model="Model" />
+    }
+    else
+    {
+        <partial name="_EmptyState" />
+    }
+</div>

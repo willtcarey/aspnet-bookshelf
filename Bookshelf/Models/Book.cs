@@ -1,8 +1,9 @@
+using Bookshelf.Areas.Admin;
 using Bookshelf.Attributes;
 
 namespace Bookshelf.Models;
 
-public class Book
+public class Book : IEntity
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;

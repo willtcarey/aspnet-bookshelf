@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["PageTitle"] = "Dashboard";
+    ViewData["PageDescription"] = "Overview of your Bookshelf data.";
+}
+
+<div class="flex flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="stat rounded-box bg-base-200 shadow ring-1 ring-base-300/60">
+            <div class="stat-title">Books</div>
+            <div class="stat-value text-primary">@ViewData["BookCount"]</div>
+            <div class="stat-actions">
+                <a class="btn btn-sm" asp-area="Admin" asp-controller="Books" asp-action="Index">View all</a>
+            </div>
+        </div>
+        <div class="stat rounded-box bg-base-200 shadow ring-1 ring-base-300/60">
+            <div class="stat-title">Authors</div>
+            <div class="stat-value text-secondary">@ViewData["AuthorCount"]</div>
+            <div class="stat-actions">
+                <a class="btn btn-sm" asp-area="Admin" asp-controller="Authors" asp-action="Index">View all</a>
+            </div>
+        </div>
+        <div class="stat rounded-box bg-base-200 shadow ring-1 ring-base-300/60">
+            <div class="stat-title">Users</div>
+            <div class="stat-value text-accent">@ViewData["UserCount"]</div>
+            <div class="stat-actions">
+                <a class="btn btn-sm" asp-area="Admin" asp-controller="Users" asp-action="Index">View all</a>
+            </div>
+        </div>
+    </div>
+</div>

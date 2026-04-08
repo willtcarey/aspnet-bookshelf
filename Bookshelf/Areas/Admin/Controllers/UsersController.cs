@@ -1,0 +1,81 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Bookshelf.Helpers;
+using Bookshelf.Areas.Admin.ViewModels;
+
+namespace Bookshelf.Areas.Admin.Controllers;
+
+public class UsersController : AdminController
+{
+    private readonly UserManager<IdentityUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
+    private const int PageSize = 20;
+
+    public UsersController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+    {
+        _userManager = userManager;
+        _roleManager = roleManager;
+    }
+
+    // GET: Admin/Users
+    public async Task<IActionResult> Index(int page = 1, string? sort = null, string? dir = null)
+    {
+        IQueryable<IdentityUser> query = _userManager.Users;
+
+        query = (sort?.ToLowerInvariant(), dir?.ToLowerInvariant()) switch
+        {
+            ("email", "desc") => query.OrderByDescending(u => u.Email),
+            ("email", _) => query.OrderBy(u => u.Email),
+            _ => query.OrderBy(u => u.Email)
+        };
+
+        var paginatedUsers = await PaginatedList<IdentityUser>.CreateAsync(query, page, PageSize, sort, dir);
+
+        var viewModels = new List<AdminUserViewModel>();
+        foreach (var user in paginatedUsers)
+        {
+            viewModels.Add(new AdminUserViewModel
+            {
+                Id = user.Id,
+                Email = user.Email,
+                IsAdmin = await _userManager.IsInRoleAsync(user, "Admin")
+            });
+        }
+
+        var result = new PaginatedList<AdminUserViewModel>(
+            viewModels, paginatedUsers.TotalCount, paginatedUsers.PageIndex, PageSize, sort, dir);
+
+        return View(result);
+    }
+
+    // POST: Admin/Users/ToggleAdmin
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleAdmin(string id)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (id == currentUserId)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        if (await _userManager.IsInRoleAsync(user, "Admin"))
+        {
+            await _userManager.RemoveFromRoleAsync(user, "Admin");
+        }
+        else
+        {
+            await _userManager.AddToRoleAsync(user, "Admin");
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+}

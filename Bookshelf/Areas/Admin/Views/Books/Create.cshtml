@@ -1,0 +1,42 @@
+@model AdminBookFormViewModel
+
+@{
+    ViewData["Title"] = "Add Book";
+    ViewData["PageTitle"] = "Add a book";
+    ViewData["PageDescription"] = "Create a new library entry with its author, ISBN, publication year, and cover image.";
+    var hasAuthors = Model.Authors?.Any() == true;
+}
+
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    @if (!hasAuthors)
+    {
+        <div class="alert alert-warning shadow-lg">
+            <span>Add at least one author before creating a book.</span>
+            <div>
+                <a class="btn btn-sm btn-neutral" asp-area="Admin" asp-controller="Authors" asp-action="Create">Create an author</a>
+            </div>
+        </div>
+    }
+
+    <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-area="Admin" asp-controller="Books" asp-action="Create" class="space-y-5">
+                <form-text asp-for="Title" />
+                <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
+                <form-text asp-for="Isbn" label="ISBN" />
+                <form-text asp-for="Year" />
+
+                <form-file asp-for="CoverImagePath" label="Cover image" accept="image/*" hint="Optional. Upload a cover image for this book." />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary" disabled="@(!hasAuthors)">Create book</button>
+                    <a class="btn btn-ghost" asp-area="Admin" asp-controller="Books" asp-action="Index">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

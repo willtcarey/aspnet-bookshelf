@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full" data-theme="nord">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin - Bookshelf</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="min-h-full">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="flex w-64 flex-col border-r border-base-300/60 bg-base-200">
+            <div class="border-b border-base-300/60 px-4 py-4">
+                <a class="text-xl font-black tracking-tight text-primary" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                    Bookshelf Admin
+                </a>
+            </div>
+            <div class="flex-1 overflow-y-auto px-3 py-4">
+                <partial name="_AdminNavigation" />
+            </div>
+            <div class="border-t border-base-300/60 px-4 py-3 text-xs text-base-content/50">
+                Logged in as @User.Identity?.Name
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <div class="flex flex-1 flex-col">
+            <header class="border-b border-base-300/60 bg-base-100 px-6 py-4">
+                <h1 class="text-lg font-semibold">@ViewData["Title"]</h1>
+            </header>
+            <main class="flex-1 bg-base-100 p-6">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
