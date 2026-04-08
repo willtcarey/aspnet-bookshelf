@@ -2,33 +2,18 @@ namespace Bookshelf.Services;
 
 public class LocalFileStorage : IFileStorage
 {
-    private readonly string _uploadRootPath;
-    private readonly string _uploadRequestPath;
+    private readonly UploadStoragePaths _paths;
 
-    public LocalFileStorage(IWebHostEnvironment environment, IConfiguration configuration)
+    public LocalFileStorage(UploadStoragePaths paths)
     {
-        var webRootPath = environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
-        }
-
-        var configuredUploadPath = configuration["FileStorage:UploadsPath"];
-        var uploadPath = string.IsNullOrWhiteSpace(configuredUploadPath)
-            ? "uploads"
-            : configuredUploadPath.Trim().Trim('/', '\\');
-
-        _uploadRequestPath = $"/{uploadPath.Replace('\\', '/')}";
-        _uploadRootPath = Path.Combine(webRootPath, uploadPath.Replace('/', Path.DirectorySeparatorChar));
-
-        Directory.CreateDirectory(_uploadRootPath);
+        _paths = paths;
     }
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType)
     {
         var extension = ResolveExtension(fileName, contentType);
         var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
-        var fullPath = Path.Combine(_uploadRootPath, uniqueFileName);
+        var fullPath = Path.Combine(_paths.UploadRootPath, uniqueFileName);
 
         if (stream.CanSeek)
         {
@@ -38,12 +23,12 @@ public class LocalFileStorage : IFileStorage
         await using var output = File.Create(fullPath);
         await stream.CopyToAsync(output);
 
-        return $"{_uploadRequestPath}/{uniqueFileName}";
+        return $"{_paths.UploadRequestPath}/{uniqueFileName}";
     }
 
     public Task<Stream?> GetAsync(string path)
     {
-        var fullPath = ResolveFullPath(path);
+        var fullPath = _paths.ResolveUploadAbsolutePath(path);
         if (!File.Exists(fullPath))
         {
             return Task.FromResult<Stream?>(null);
@@ -55,15 +40,24 @@ public class LocalFileStorage : IFileStorage
 
     public Task DeleteAsync(string path)
     {
-        if (string.IsNullOrWhiteSpace(path))
+        var normalizedPath = _paths.NormalizeStoredPath(path);
+        if (normalizedPath is null)
         {
             return Task.CompletedTask;
         }
 
-        var fullPath = ResolveFullPath(path);
+        var fullPath = _paths.ResolveUploadAbsolutePath(normalizedPath);
         if (File.Exists(fullPath))
         {
             File.Delete(fullPath);
+        }
+
+        foreach (var cacheVariantPath in _paths.EnumerateCacheVariantPaths(normalizedPath))
+        {
+            if (File.Exists(cacheVariantPath))
+            {
+                File.Delete(cacheVariantPath);
+            }
         }
 
         return Task.CompletedTask;
@@ -71,18 +65,8 @@ public class LocalFileStorage : IFileStorage
 
     public string GetUrl(string path)
     {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return string.Empty;
-        }
-
-        return path.StartsWith('/') ? path : $"/{path.TrimStart('/')}";
-    }
-
-    private string ResolveFullPath(string path)
-    {
-        var fileName = Path.GetFileName(path.TrimStart('/'));
-        return Path.Combine(_uploadRootPath, fileName);
+        var normalizedPath = _paths.NormalizeStoredPath(path);
+        return normalizedPath ?? string.Empty;
     }
 
     private static string ResolveExtension(string fileName, string contentType)
