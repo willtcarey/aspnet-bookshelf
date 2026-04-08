@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "css:build": "tailwindcss -i ./Styles/tailwind.css -o ./wwwroot/css/site.css --minify",
-    "css:watch": "tailwindcss -i ./Styles/tailwind.css -o ./wwwroot/css/site.css --watch"
+    "css:watch": "tailwindcss -i ./Styles/tailwind.css -o ./wwwroot/css/site.css --watch=always"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.4",

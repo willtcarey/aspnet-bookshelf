@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Helpers;
 using Bookshelf.Areas.Admin.ViewModels;
+using Bookshelf.Security;
 
 namespace Bookshelf.Areas.Admin.Controllers;
 
@@ -40,7 +41,7 @@ public class UsersController : AdminController
             {
                 Id = user.Id,
                 Email = user.Email,
-                IsAdmin = await _userManager.IsInRoleAsync(user, "Admin")
+                IsAdmin = await _userManager.IsInRoleAsync(user, RoleNames.Admin)
             });
         }
 
@@ -67,13 +68,13 @@ public class UsersController : AdminController
             return NotFound();
         }
 
-        if (await _userManager.IsInRoleAsync(user, "Admin"))
+        if (await _userManager.IsInRoleAsync(user, RoleNames.Admin))
         {
-            await _userManager.RemoveFromRoleAsync(user, "Admin");
+            await _userManager.RemoveFromRoleAsync(user, RoleNames.Admin);
         }
         else
         {
-            await _userManager.AddToRoleAsync(user, "Admin");
+            await _userManager.AddToRoleAsync(user, RoleNames.Admin);
         }
 
         return RedirectToAction(nameof(Index));

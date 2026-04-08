@@ -33,29 +33,16 @@ public class ImageUpload
 
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
-    private readonly string _uploadsPath;
-    private readonly string _cacheRootPath;
+    private readonly UploadStoragePaths _paths;
 
     public ImageUpload(
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
-        IWebHostEnvironment environment,
-        IConfiguration configuration)
+        UploadStoragePaths paths)
     {
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
-
-        var webRootPath = environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
-        }
-
-        _uploadsPath = NormalizeUploadsPath(configuration["FileStorage:UploadsPath"]);
-        _cacheRootPath = Path.Combine(
-            webRootPath,
-            _uploadsPath.Replace('/', Path.DirectorySeparatorChar),
-            ".cache");
+        _paths = paths;
     }
 
     public async Task<UploadResult> SaveAsync(IFormFile? file)
@@ -87,7 +74,7 @@ public class ImageUpload
         int? height,
         string format = "webp")
     {
-        var normalizedPath = NormalizePath(path);
+        var normalizedPath = _paths.NormalizeStoredPath(path);
         if (normalizedPath is null)
         {
             return new ImageNotFoundResult();
@@ -98,10 +85,9 @@ public class ImageUpload
             return new ImageErrorResult($"Width and height must be between 1 and {MaxResizeDimension}.");
         }
 
-        var sourcePath = $"/{normalizedPath}";
         if (!width.HasValue && !height.HasValue)
         {
-            return await GetOriginalAsync(sourcePath);
+            return await GetOriginalAsync(normalizedPath);
         }
 
         var imageFormat = ResolveFormat(format);
@@ -110,7 +96,7 @@ public class ImageUpload
             return new ImageErrorResult("Unsupported image format.");
         }
 
-        return await GetResizedAsync(normalizedPath, sourcePath, width, height, imageFormat);
+        return await GetResizedAsync(normalizedPath, width, height, imageFormat);
     }
 
     private async Task<ImageResult> GetOriginalAsync(string sourcePath)
@@ -126,18 +112,17 @@ public class ImageUpload
 
     private async Task<ImageResult> GetResizedAsync(
         string normalizedPath,
-        string sourcePath,
         int? width,
         int? height,
         ImageFormat format)
     {
-        var cachePath = BuildCachePath(normalizedPath, width, height, format);
+        var cachePath = _paths.BuildCachePath(normalizedPath, width, height, format.Extension);
         if (File.Exists(cachePath))
         {
             return new ImageFileResult(cachePath, format.ContentType);
         }
 
-        await using var sourceStream = await _fileStorage.GetAsync(sourcePath);
+        await using var sourceStream = await _fileStorage.GetAsync(normalizedPath);
         if (sourceStream is null)
         {
             return new ImageNotFoundResult();
@@ -178,66 +163,9 @@ public class ImageUpload
         return new ImageFileResult(cachePath, format.ContentType);
     }
 
-    private string? NormalizePath(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return null;
-        }
-
-        var normalizedPath = Uri.UnescapeDataString(path)
-            .Replace('\\', '/')
-            .Trim();
-
-        if (normalizedPath.Contains('\0'))
-        {
-            return null;
-        }
-
-        normalizedPath = normalizedPath.Trim('/');
-        var prefix = $"{_uploadsPath}/";
-        if (!normalizedPath.StartsWith(prefix, StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        var fileName = normalizedPath[prefix.Length..];
-        if (string.IsNullOrWhiteSpace(fileName)
-            || fileName is "." or ".."
-            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return $"{_uploadsPath}/{fileName}";
-    }
-
     private static bool IsValidDimension(int? value)
     {
         return !value.HasValue || (value.Value >= 1 && value.Value <= MaxResizeDimension);
-    }
-
-    private string BuildCachePath(string normalizedPath, int? width, int? height, ImageFormat format)
-    {
-        var variantFolder = $"{width?.ToString() ?? "auto"}x{height?.ToString() ?? "auto"}";
-        var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
-
-        return Path.Combine(_cacheRootPath, variantFolder, $"{fileName}{format.Extension}");
-    }
-
-    private static string NormalizeUploadsPath(string? configuredUploadPath)
-    {
-        var uploadPath = string.IsNullOrWhiteSpace(configuredUploadPath)
-            ? "uploads"
-            : configuredUploadPath.Trim();
-
-        var normalizedUploadPath = uploadPath
-            .Replace('\\', '/')
-            .Trim('/');
-
-        return string.IsNullOrWhiteSpace(normalizedUploadPath)
-            ? "uploads"
-            : normalizedUploadPath;
     }
 
     private static ImageFormat? ResolveFormat(string? format)
