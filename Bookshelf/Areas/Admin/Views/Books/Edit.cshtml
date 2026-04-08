@@ -1,0 +1,33 @@
+@model AdminBookFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Book";
+    ViewData["PageTitle"] = "Edit book";
+    ViewData["PageDescription"] = "Update the details for this title, including its cover image.";
+}
+
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    <div class="card bg-base-200 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
+
+            <form asp-area="Admin" asp-controller="Books" asp-action="Edit" asp-route-id="@Model.Id" class="space-y-5">
+                <input type="hidden" asp-for="Id" />
+
+                <form-text asp-for="Title" />
+                <form-select asp-for="AuthorId" label="Author" asp-items="Model.Authors" placeholder="Select an author" />
+                <form-text asp-for="Isbn" label="ISBN" />
+                <form-text asp-for="Year" />
+
+                <form-file asp-for="CoverImagePath" label="Cover image" accept="image/*" hint="No cover image uploaded yet." />
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <a class="btn btn-ghost" asp-area="Admin" asp-controller="Books" asp-action="Index">Back to books</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

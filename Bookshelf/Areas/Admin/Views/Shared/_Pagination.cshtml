@@ -1,0 +1,68 @@
+@model dynamic
+
+@{
+    int pageIndex = Model.PageIndex;
+    int totalPages = Model.TotalPages;
+
+    // Preserve existing query string params
+    var query = ViewContext.HttpContext.Request.Query;
+    var baseParams = new List<string>();
+    foreach (var param in query)
+    {
+        var key = param.Key.ToLowerInvariant();
+        if (key != "page")
+        {
+            foreach (var value in param.Value)
+            {
+                baseParams.Add($"{Uri.EscapeDataString(param.Key)}={Uri.EscapeDataString(value ?? "")}");
+            }
+        }
+    }
+
+    string BuildPageUrl(int page)
+    {
+        var allParams = new List<string>(baseParams) { $"page={page}" };
+        return $"?{string.Join("&", allParams)}";
+    }
+}
+
+@if (totalPages > 1)
+{
+    <div class="flex justify-center pt-4">
+        <div class="join">
+            @if (pageIndex > 1)
+            {
+                <a href="@BuildPageUrl(pageIndex - 1)" class="join-item btn btn-sm">«</a>
+            }
+            else
+            {
+                <button class="join-item btn btn-sm btn-disabled">«</button>
+            }
+
+            @for (var i = 1; i <= totalPages; i++)
+            {
+                if (i == pageIndex)
+                {
+                    <button class="join-item btn btn-sm btn-active">@i</button>
+                }
+                else if (i == 1 || i == totalPages || (i >= pageIndex - 2 && i <= pageIndex + 2))
+                {
+                    <a href="@BuildPageUrl(i)" class="join-item btn btn-sm">@i</a>
+                }
+                else if (i == pageIndex - 3 || i == pageIndex + 3)
+                {
+                    <button class="join-item btn btn-sm btn-disabled">…</button>
+                }
+            }
+
+            @if (pageIndex < totalPages)
+            {
+                <a href="@BuildPageUrl(pageIndex + 1)" class="join-item btn btn-sm">»</a>
+            }
+            else
+            {
+                <button class="join-item btn btn-sm btn-disabled">»</button>
+            }
+        </div>
+    </div>
+}

@@ -1,0 +1,57 @@
+@model PaginatedList<Author>
+
+@{
+    ViewData["Title"] = "Authors";
+    ViewData["PageTitle"] = "Authors";
+    ViewData["PageDescription"] = $"Manage the authors in your library. {Model.TotalCount} total.";
+    ViewData["PageActionUrl"] = Url.Action("Create", "Authors", new { area = "Admin" });
+    ViewData["PageActionText"] = "Add an author";
+    ViewData["EmptyTitle"] = "No authors yet";
+    ViewData["EmptyDescription"] = "Create an author so you can connect books to the people who wrote them.";
+    ViewData["EmptyActionUrl"] = Url.Action("Create", "Authors", new { area = "Admin" });
+    ViewData["EmptyActionText"] = "Add your first author";
+}
+
+<div class="flex flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    @if (Model.Any())
+    {
+        <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+            <div class="card-body p-0">
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <sortable-column name="name" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Name</sortable-column>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var author in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="font-semibold">@author.Name</div>
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a class="btn btn-ghost btn-sm" asp-area="Admin" asp-controller="Authors" asp-action="Edit" asp-route-id="@author.Id">Edit</a>
+                                            <a class="btn btn-ghost btn-sm text-error" asp-area="Admin" asp-controller="Authors" asp-action="Delete" asp-route-id="@author.Id">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_Pagination" model="Model" />
+    }
+    else
+    {
+        <partial name="_EmptyState" />
+    }
+</div>

@@ -1,0 +1,12 @@
+<div class="hero rounded-3xl bg-base-200 py-16 shadow-xl ring-1 ring-base-300/60">
+    <div class="hero-content text-center">
+        <div class="max-w-md space-y-4">
+            <h2 class="text-2xl font-bold">@ViewData["EmptyTitle"]</h2>
+            <p class="text-base-content/75">@ViewData["EmptyDescription"]</p>
+            @if (ViewData["EmptyActionUrl"] is string actionUrl && ViewData["EmptyActionText"] is string actionText)
+            {
+                <a class="btn btn-primary" href="@actionUrl">@actionText</a>
+            }
+        </div>
+    </div>
+</div>

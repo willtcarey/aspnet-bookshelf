@@ -1,0 +1,51 @@
+@model Bookshelf.Models.Author
+
+@{
+    ViewData["Title"] = "Delete Author";
+    ViewData["PageTitle"] = "Delete author";
+    ViewData["PageDescription"] = "Remove this author from your library.";
+    ViewData["PageTitleClass"] = "text-error";
+}
+
+<div class="mx-auto flex max-w-3xl flex-col gap-6">
+    <partial name="_PageHeader" />
+
+    <div class="alert alert-warning shadow-lg">
+        <span>Are you sure you want to delete <strong>@Model.Name</strong>?</span>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl ring-1 ring-base-300/60">
+        <div class="card-body gap-5">
+            @if (Model.Books.Any())
+            {
+                <div class="alert alert-error">
+                    <span>This will also affect @Model.Books.Count linked book(s).</span>
+                </div>
+            }
+
+            <div>
+                <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
+                <div class="mt-2 text-xl font-semibold">@Model.Name</div>
+            </div>
+
+            @if (Model.Books.Any())
+            {
+                <div>
+                    <div class="mb-3 text-sm uppercase tracking-wide text-base-content/60">Linked books</div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var book in Model.Books.OrderBy(book => book.Title))
+                        {
+                            <span class="badge badge-outline">@book.Title</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <form asp-area="Admin" asp-controller="Authors" asp-action="Delete" asp-route-id="@Model.Id" class="flex flex-wrap gap-3 pt-2">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-error">Delete author</button>
+                <a class="btn btn-ghost" asp-area="Admin" asp-controller="Authors" asp-action="Index">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
