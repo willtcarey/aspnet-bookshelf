@@ -24,7 +24,7 @@ Bookshelf lets users:
 - [x] **File Uploading** — Upload and display book cover images (`ce6fd9c`)
 - [x] **Front-End CSS Framework** — Tailwind CSS + DaisyUI integrated with an automatic Docker-based watch/build pipeline (`febec77`)
 - [x] **Admin UI** — Add an admin area with a separate layout for managing site-wide data (`c61968f`)
-- [ ] **Background Job Processing** — Async job queue for tasks like image processing and email delivery
+- [x] **Background Job Processing** — Async job queue for tasks like image processing and email delivery (`5383574`)
 
 ## Models
 
