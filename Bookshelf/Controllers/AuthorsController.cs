@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
+using Bookshelf.Services;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -11,29 +12,36 @@ namespace Bookshelf.Controllers;
 public class AuthorsController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public AuthorsController(ApplicationDbContext context)
+    public AuthorsController(ApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     // GET: Authors
-    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
-        var authors = await _context.Authors.ToListAsync();
+        var userId = _currentUser.UserId!;
+
+        var authors = await _context.Authors
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
+
         return View(authors);
     }
 
     // GET: Authors/Details/5
-    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
+        var userId = _currentUser.UserId!;
+
         var author = await _context.Authors
             .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
         if (author == null) return NotFound();
 
@@ -53,7 +61,11 @@ public class AuthorsController : Controller
     {
         if (ModelState.IsValid)
         {
-            var author = new Author { Name = viewModel.Name };
+            var author = new Author
+            {
+                Name = viewModel.Name,
+                UserId = _currentUser.UserId!
+            };
             _context.Add(author);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -67,7 +79,11 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors.FindAsync(id);
+        var userId = _currentUser.UserId!;
+
+        var author = await _context.Authors
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
         if (author == null) return NotFound();
 
         var viewModel = new AuthorFormViewModel
@@ -85,9 +101,13 @@ public class AuthorsController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
+        var userId = _currentUser.UserId!;
+
         if (ModelState.IsValid)
         {
-            var author = await _context.Authors.FindAsync(id);
+            var author = await _context.Authors
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
             if (author == null) return NotFound();
 
             author.Name = viewModel.Name;
@@ -98,7 +118,7 @@ public class AuthorsController : Controller
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Authors.AnyAsync(a => a.Id == id))
+                if (!await _context.Authors.AnyAsync(a => a.Id == id && a.UserId == userId))
                     return NotFound();
                 throw;
             }
@@ -113,9 +133,11 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
+        var userId = _currentUser.UserId!;
+
         var author = await _context.Authors
             .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
         if (author == null) return NotFound();
 
@@ -127,7 +149,11 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var author = await _context.Authors.FindAsync(id);
+        var userId = _currentUser.UserId!;
+
+        var author = await _context.Authors
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
         if (author != null)
         {
             _context.Authors.Remove(author);
