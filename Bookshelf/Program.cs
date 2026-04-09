@@ -87,10 +87,10 @@ app.UseHangfireDashboard(hangfireDashboardPath, new DashboardOptions
     }
 });
 
-app.MapControllerRoute(
+app.MapAreaControllerRoute(
     name: "admin",
-    pattern: "Admin/{controller=Dashboard}/{action=Index}/{id?}",
-    defaults: new { area = "Admin" });
+    areaName: "Admin",
+    pattern: "Admin/{controller=Dashboard}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "default",
