@@ -17,14 +17,14 @@ Bookshelf lets users:
 
 ## Planned Features
 
-- [x] **Dockerized Development** — Run the entire application in Docker with Docker Compose (`bbc811a`)
-- [x] **Database-Backed Models** — Books and Authors with Entity Framework Core (`bbd2690`)
-- [x] **Model Editing** — Full CRUD UI for managing books and authors (`bbd2690`)
-- [x] **User Accounts** — Registration, login, logout, and authentication/authorization (`f4e6424`)
-- [x] **File Uploading** — Upload and display book cover images (`ce6fd9c`)
-- [x] **Front-End CSS Framework** — Tailwind CSS + DaisyUI integrated with an automatic Docker-based watch/build pipeline (`febec77`)
-- [x] **Admin UI** — Add an admin area with a separate layout for managing site-wide data (`c61968f`)
-- [x] **Background Job Processing** — Async job queue for tasks like image processing and email delivery (`5383574`)
+- [x] **Dockerized Development** — Run the entire application in Docker with Docker Compose ([`bbc811a`](https://github.com/willtcarey/aspnet-bookshelf/commit/bbc811a))
+- [x] **Database-Backed Models** — Books and Authors with Entity Framework Core ([`bbd2690`](https://github.com/willtcarey/aspnet-bookshelf/commit/bbd2690))
+- [x] **Model Editing** — Full CRUD UI for managing books and authors ([`bbd2690`](https://github.com/willtcarey/aspnet-bookshelf/commit/bbd2690))
+- [x] **User Accounts** — Registration, login, logout, and authentication/authorization ([`f4e6424`](https://github.com/willtcarey/aspnet-bookshelf/commit/f4e6424))
+- [x] **File Uploading** — Upload and display book cover images ([`ce6fd9c`](https://github.com/willtcarey/aspnet-bookshelf/commit/ce6fd9c))
+- [x] **Front-End CSS Framework** — Tailwind CSS + DaisyUI integrated with an automatic Docker-based watch/build pipeline ([`febec77`](https://github.com/willtcarey/aspnet-bookshelf/commit/febec77))
+- [x] **Admin UI** — Add an admin area with a separate layout for managing site-wide data ([`c61968f`](https://github.com/willtcarey/aspnet-bookshelf/commit/c61968f))
+- [x] **Background Job Processing** — Async job queue for tasks like image processing and email delivery ([`5383574`](https://github.com/willtcarey/aspnet-bookshelf/commit/5383574))
 
 ## Models
 
