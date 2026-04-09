@@ -24,6 +24,43 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<Book> Books => Set<Book>();
     public DbSet<Author> Authors => Set<Author>();
 
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        // Per-user ownership for Books and Authors (issue #1).
+        //
+        // Every Book and every Author belongs to exactly one IdentityUser. The FKs
+        // are required (non-nullable string) so the column is NOT NULL in the DB.
+        // Indexes on UserId keep the per-user list queries (Books.Where(b => b.UserId == me))
+        // fast once the dataset grows.
+        //
+        // DeleteBehavior.Cascade: deleting a user wipes their entire shelf. This
+        // matches the existing Author -> Book cascade already on FK_Books_Authors_AuthorId,
+        // which is left unchanged by this migration.
+        builder.Entity<Book>(entity =>
+        {
+            entity.HasOne(b => b.User)
+                .WithMany()
+                .HasForeignKey(b => b.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(b => b.UserId);
+        });
+
+        builder.Entity<Author>(entity =>
+        {
+            entity.HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(a => a.UserId);
+        });
+    }
+
     // Automatically manages file lifecycle for properties marked with [FileAttachment].
     //
     // Uses the change tracker to handle cleanup:
