@@ -28,6 +28,11 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
 
     protected virtual Task PopulateFormDataAsync(TFormViewModel viewModel) => Task.CompletedTask;
 
+    /// <summary>
+    /// Override to add custom ModelState errors before the IsValid check on Create/Edit POST.
+    /// </summary>
+    protected virtual Task ValidateFormAsync(TFormViewModel viewModel) => Task.CompletedTask;
+
     // GET: Admin/{Resource}
     public async Task<IActionResult> Index(int page = 1, string? sort = null, string? dir = null)
     {
@@ -50,6 +55,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(TFormViewModel viewModel)
     {
+        await ValidateFormAsync(viewModel);
+
         if (ModelState.IsValid)
         {
             var entity = CreateEntity(viewModel);
@@ -84,6 +91,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
 
         var entity = await DbSet.FindAsync(id);
         if (entity == null) return NotFound();
+
+        await ValidateFormAsync(viewModel);
 
         if (ModelState.IsValid)
         {

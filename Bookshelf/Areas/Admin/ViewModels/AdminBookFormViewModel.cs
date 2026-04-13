@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookshelf.Areas.Admin.ViewModels;
@@ -15,5 +16,9 @@ public class AdminBookFormViewModel : IAdminFormViewModel
     /// </summary>
     public string? CoverImagePath { get; set; }
 
+    [Required]
+    public string UserId { get; set; } = string.Empty;
+
     public SelectList? Authors { get; set; }
+    public SelectList? Users { get; set; }
 }

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
@@ -9,14 +10,22 @@ namespace Bookshelf.Areas.Admin.Controllers;
 
 public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
 {
-    public BooksController(ApplicationDbContext context) : base(context) { }
+    private readonly UserManager<IdentityUser> _userManager;
+
+    public BooksController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        : base(context)
+    {
+        _userManager = userManager;
+    }
 
     protected override DbSet<Book> DbSet => Context.Books;
-    protected override IQueryable<Book> GetBaseQuery() => Context.Books.Include(b => b.Author);
+    protected override IQueryable<Book> GetBaseQuery() =>
+        Context.Books.Include(b => b.Author).Include(b => b.User);
     protected override Dictionary<string, Expression<Func<Book, object?>>> SortMap => new()
     {
         ["title"] = b => b.Title,
         ["author"] = b => b.Author.Name,
+        ["owner"] = b => b.User.Email!,
         ["year"] = b => (object?)b.Year
     };
     protected override Expression<Func<Book, object?>> DefaultSort => b => b.Title;
@@ -28,7 +37,8 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
         Isbn = entity.Isbn,
         Year = entity.Year,
         AuthorId = entity.AuthorId,
-        CoverImagePath = entity.CoverImagePath
+        CoverImagePath = entity.CoverImagePath,
+        UserId = entity.UserId
     };
 
     protected override Book CreateEntity(AdminBookFormViewModel vm) => new()
@@ -37,7 +47,8 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
         Isbn = vm.Isbn,
         Year = vm.Year,
         AuthorId = vm.AuthorId,
-        CoverImagePath = vm.CoverImagePath
+        CoverImagePath = vm.CoverImagePath,
+        UserId = vm.UserId
     };
 
     protected override void UpdateEntity(Book entity, AdminBookFormViewModel vm)
@@ -47,11 +58,27 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
         entity.Year = vm.Year;
         entity.AuthorId = vm.AuthorId;
         entity.CoverImagePath = vm.CoverImagePath;
+        entity.UserId = vm.UserId;
+    }
+
+    protected override async Task ValidateFormAsync(AdminBookFormViewModel vm)
+    {
+        if (!await Context.Authors.AnyAsync(a => a.Id == vm.AuthorId && a.UserId == vm.UserId))
+        {
+            ModelState.AddModelError(nameof(vm.AuthorId), "The selected author does not belong to the selected owner.");
+        }
     }
 
     protected override async Task PopulateFormDataAsync(AdminBookFormViewModel vm)
     {
-        var authors = await Context.Authors.OrderBy(a => a.Name).ToListAsync();
-        vm.Authors = new SelectList(authors, "Id", "Name", vm.AuthorId);
+        var authors = await Context.Authors
+            .Include(a => a.User)
+            .OrderBy(a => a.Name)
+            .Select(a => new { a.Id, Label = $"{a.Name} ({a.User.Email})" })
+            .ToListAsync();
+        vm.Authors = new SelectList(authors, "Id", "Label", vm.AuthorId);
+
+        var users = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
+        vm.Users = new SelectList(users, "Id", "Email", vm.UserId);
     }
 }
