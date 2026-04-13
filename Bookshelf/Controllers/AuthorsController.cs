@@ -1,9 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
-using Bookshelf.Services;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -12,21 +12,19 @@ namespace Bookshelf.Controllers;
 public class AuthorsController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUser;
 
-    public AuthorsController(ApplicationDbContext context, ICurrentUserService currentUser)
+    public AuthorsController(ApplicationDbContext context)
     {
         _context = context;
-        _currentUser = currentUser;
     }
+
+    private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     // GET: Authors
     public async Task<IActionResult> Index()
     {
-        var userId = _currentUser.UserId!;
-
         var authors = await _context.Authors
-            .Where(a => a.UserId == userId)
+            .Where(a => a.UserId == CurrentUserId)
             .ToListAsync();
 
         return View(authors);
@@ -37,11 +35,9 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var author = await _context.Authors
             .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
 
         if (author == null) return NotFound();
 
@@ -64,7 +60,7 @@ public class AuthorsController : Controller
             var author = new Author
             {
                 Name = viewModel.Name,
-                UserId = _currentUser.UserId!
+                UserId = CurrentUserId
             };
             _context.Add(author);
             await _context.SaveChangesAsync();
@@ -79,10 +75,8 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var author = await _context.Authors
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
 
         if (author == null) return NotFound();
 
@@ -101,12 +95,10 @@ public class AuthorsController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         if (ModelState.IsValid)
         {
             var author = await _context.Authors
-                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
 
             if (author == null) return NotFound();
 
@@ -118,7 +110,7 @@ public class AuthorsController : Controller
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Authors.AnyAsync(a => a.Id == id && a.UserId == userId))
+                if (!await _context.Authors.AnyAsync(a => a.Id == id && a.UserId == CurrentUserId))
                     return NotFound();
                 throw;
             }
@@ -133,11 +125,9 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var author = await _context.Authors
             .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
 
         if (author == null) return NotFound();
 
@@ -149,10 +139,8 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var userId = _currentUser.UserId!;
-
         var author = await _context.Authors
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
 
         if (author != null)
         {

@@ -1,10 +1,10 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
-using Bookshelf.Services;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -13,21 +13,19 @@ namespace Bookshelf.Controllers;
 public class BooksController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUser;
 
-    public BooksController(ApplicationDbContext context, ICurrentUserService currentUser)
+    public BooksController(ApplicationDbContext context)
     {
         _context = context;
-        _currentUser = currentUser;
     }
+
+    private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     // GET: Books
     public async Task<IActionResult> Index()
     {
-        var userId = _currentUser.UserId!;
-
         var books = await _context.Books
-            .Where(b => b.UserId == userId)
+            .Where(b => b.UserId == CurrentUserId)
             .Include(b => b.Author)
             .ToListAsync();
 
@@ -39,11 +37,9 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var book = await _context.Books
             .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
 
         if (book == null) return NotFound();
 
@@ -66,19 +62,17 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookFormViewModel viewModel)
     {
-        var userId = _currentUser.UserId!;
-
         // Defense in depth: never trust the AuthorId from the form. Even though the
         // dropdown only renders this user's authors, a hand-crafted POST could submit
         // any id. Reject anything that isn't owned by the current user.
-        if (!await IsOwnedAuthorAsync(viewModel.AuthorId, userId))
+        if (!await IsOwnedAuthorAsync(viewModel.AuthorId, CurrentUserId))
         {
             ModelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
         }
 
         if (ModelState.IsValid)
         {
-            var book = new Book { UserId = userId };
+            var book = new Book { UserId = CurrentUserId };
             _context.Add(book);
             await ApplyAndSaveAsync(book, viewModel);
             return RedirectToAction(nameof(Index));
@@ -93,10 +87,8 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var book = await _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
 
         if (book == null) return NotFound();
 
@@ -121,16 +113,14 @@ public class BooksController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var book = await _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
 
         if (book == null) return NotFound();
 
         // Defense in depth: same as Create -- reject AuthorIds that don't belong
         // to the current user, even though the dropdown wouldn't offer them.
-        if (!await IsOwnedAuthorAsync(viewModel.AuthorId, userId))
+        if (!await IsOwnedAuthorAsync(viewModel.AuthorId, CurrentUserId))
         {
             ModelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
         }
@@ -150,11 +140,9 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var userId = _currentUser.UserId!;
-
         var book = await _context.Books
             .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
 
         if (book == null) return NotFound();
 
@@ -166,10 +154,8 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var userId = _currentUser.UserId!;
-
         var book = await _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
 
         if (book != null)
         {
@@ -197,10 +183,8 @@ public class BooksController : Controller
     // method on the DbContext/repository.
     private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
     {
-        var userId = _currentUser.UserId!;
-
         var authors = await _context.Authors
-            .Where(a => a.UserId == userId)
+            .Where(a => a.UserId == CurrentUserId)
             .OrderBy(author => author.Name)
             .ToListAsync();
 
