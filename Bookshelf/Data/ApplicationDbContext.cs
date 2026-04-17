@@ -28,27 +28,12 @@ public class ApplicationDbContext : IdentityDbContext
     {
         base.OnModelCreating(builder);
 
-        // Per-user ownership for Books and Authors (issue #1).
+        // Per-user ownership (issue #1).
         //
-        // Every Book and every Author belongs to exactly one IdentityUser. The FKs
-        // are required (non-nullable string) so the column is NOT NULL in the DB.
-        // Indexes on UserId keep the per-user list queries (Books.Where(b => b.UserId == me))
-        // fast once the dataset grows.
-        //
-        // DeleteBehavior.Cascade: deleting a user wipes their entire shelf. This
-        // matches the existing Author -> Book cascade already on FK_Books_Authors_AuthorId,
-        // which is left unchanged by this migration.
-        builder.Entity<Book>(entity =>
-        {
-            entity.HasOne(b => b.User)
-                .WithMany()
-                .HasForeignKey(b => b.UserId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasIndex(b => b.UserId);
-        });
-
+        // Authors belong directly to a user. Books inherit ownership through
+        // their Author (Author -> User), so Books don't need their own UserId.
+        // The existing Author -> Book cascade on FK_Books_Authors_AuthorId means
+        // deleting a user cascades: User -> Authors -> Books.
         builder.Entity<Author>(entity =>
         {
             entity.HasOne(a => a.User)

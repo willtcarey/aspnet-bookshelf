@@ -6,9 +6,10 @@ using Bookshelf.Models;
 namespace Bookshelf.Repositories;
 
 /// <summary>
-/// Ownership-scoped data access for Books. Every method requires a userId
-/// parameter, making it structurally impossible to accidentally query or
-/// modify another user's data.
+/// Ownership-scoped data access for Books. Books inherit ownership through
+/// their Author (Author.UserId), so every query filters via the author
+/// relationship. Every method requires a userId parameter, making it
+/// structurally impossible to accidentally query another user's data.
 /// </summary>
 public class BookRepository
 {
@@ -22,7 +23,7 @@ public class BookRepository
     public Task<List<Book>> ListAsync(string userId)
     {
         return _context.Books
-            .Where(b => b.UserId == userId)
+            .Where(b => b.Author.UserId == userId)
             .Include(b => b.Author)
             .ToListAsync();
     }
@@ -30,19 +31,18 @@ public class BookRepository
     public Task<Book?> FindAsync(int id, string userId)
     {
         return _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.Author.UserId == userId);
     }
 
     public Task<Book?> FindWithAuthorAsync(int id, string userId)
     {
         return _context.Books
             .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.Author.UserId == userId);
     }
 
-    public void Add(Book book, string userId)
+    public void Add(Book book)
     {
-        book.UserId = userId;
         _context.Books.Add(book);
     }
 

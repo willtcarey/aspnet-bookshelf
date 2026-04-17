@@ -65,7 +65,7 @@ public class BooksController : Controller
         {
             var book = new Book();
             ApplyFormData(book, viewModel);
-            _books.Add(book, CurrentUserId);
+            _books.Add(book);
             await _books.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
