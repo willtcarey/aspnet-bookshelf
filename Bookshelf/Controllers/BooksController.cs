@@ -1,10 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Bookshelf.Data;
 using Bookshelf.Models;
+using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -12,11 +10,11 @@ namespace Bookshelf.Controllers;
 [Authorize]
 public class BooksController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly BookRepository _books;
 
-    public BooksController(ApplicationDbContext context)
+    public BooksController(BookRepository books)
     {
-        _context = context;
+        _books = books;
     }
 
     private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -24,11 +22,7 @@ public class BooksController : Controller
     // GET: Books
     public async Task<IActionResult> Index()
     {
-        var books = await _context.Books
-            .Where(b => b.UserId == CurrentUserId)
-            .Include(b => b.Author)
-            .ToListAsync();
-
+        var books = await _books.ListAsync(CurrentUserId);
         return View(books);
     }
 
@@ -37,10 +31,7 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var book = await _context.Books
-            .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
-
+        var book = await _books.FindWithAuthorAsync(id.Value, CurrentUserId);
         if (book == null) return NotFound();
 
         return View(book);
@@ -51,7 +42,7 @@ public class BooksController : Controller
     {
         var viewModel = new BookFormViewModel
         {
-            Authors = await BuildAuthorsSelectListAsync()
+            Authors = await _books.BuildAuthorsSelectListAsync(CurrentUserId)
         };
 
         return View(viewModel);
@@ -65,20 +56,21 @@ public class BooksController : Controller
         // Defense in depth: never trust the AuthorId from the form. Even though the
         // dropdown only renders this user's authors, a hand-crafted POST could submit
         // any id. Reject anything that isn't owned by the current user.
-        if (!await IsOwnedAuthorAsync(viewModel.AuthorId, CurrentUserId))
+        if (!await _books.IsOwnedAuthorAsync(viewModel.AuthorId, CurrentUserId))
         {
             ModelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
         }
 
         if (ModelState.IsValid)
         {
-            var book = new Book { UserId = CurrentUserId };
-            _context.Add(book);
-            await ApplyAndSaveAsync(book, viewModel);
+            var book = new Book();
+            ApplyFormData(book, viewModel);
+            _books.Add(book, CurrentUserId);
+            await _books.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
+        viewModel.Authors = await _books.BuildAuthorsSelectListAsync(CurrentUserId, viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -87,9 +79,7 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var book = await _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
-
+        var book = await _books.FindAsync(id.Value, CurrentUserId);
         if (book == null) return NotFound();
 
         var viewModel = new BookFormViewModel
@@ -100,7 +90,7 @@ public class BooksController : Controller
             Year = book.Year,
             AuthorId = book.AuthorId,
             CoverImagePath = book.CoverImagePath,
-            Authors = await BuildAuthorsSelectListAsync(book.AuthorId)
+            Authors = await _books.BuildAuthorsSelectListAsync(CurrentUserId, book.AuthorId)
         };
 
         return View(viewModel);
@@ -113,25 +103,24 @@ public class BooksController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
-        var book = await _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
-
+        var book = await _books.FindAsync(id, CurrentUserId);
         if (book == null) return NotFound();
 
         // Defense in depth: same as Create -- reject AuthorIds that don't belong
         // to the current user, even though the dropdown wouldn't offer them.
-        if (!await IsOwnedAuthorAsync(viewModel.AuthorId, CurrentUserId))
+        if (!await _books.IsOwnedAuthorAsync(viewModel.AuthorId, CurrentUserId))
         {
             ModelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
         }
 
         if (ModelState.IsValid)
         {
-            await ApplyAndSaveAsync(book, viewModel);
+            ApplyFormData(book, viewModel);
+            await _books.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
+        viewModel.Authors = await _books.BuildAuthorsSelectListAsync(CurrentUserId, viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -140,10 +129,7 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var book = await _context.Books
-            .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
-
+        var book = await _books.FindWithAuthorAsync(id.Value, CurrentUserId);
         if (book == null) return NotFound();
 
         return View(book);
@@ -154,45 +140,22 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var book = await _context.Books
-            .FirstOrDefaultAsync(b => b.Id == id && b.UserId == CurrentUserId);
-
+        var book = await _books.FindAsync(id, CurrentUserId);
         if (book != null)
         {
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
+            _books.Remove(book);
+            await _books.SaveAsync();
         }
 
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task ApplyAndSaveAsync(Book book, BookFormViewModel viewModel)
+    private static void ApplyFormData(Book book, BookFormViewModel viewModel)
     {
         book.Title = viewModel.Title;
         book.Isbn = viewModel.Isbn;
         book.Year = viewModel.Year;
         book.AuthorId = viewModel.AuthorId;
         book.CoverImagePath = viewModel.CoverImagePath;
-
-        await _context.SaveChangesAsync();
-    }
-
-    // TODO: This builds view-specific presentation data (SelectList) from a DB query.
-    // Should this live somewhere else? Every controller that needs an author dropdown
-    // would duplicate this. Could move to a shared service, a view component, or a
-    // method on the DbContext/repository.
-    private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
-    {
-        var authors = await _context.Authors
-            .Where(a => a.UserId == CurrentUserId)
-            .OrderBy(author => author.Name)
-            .ToListAsync();
-
-        return new SelectList(authors, "Id", "Name", selectedAuthorId);
-    }
-
-    private Task<bool> IsOwnedAuthorAsync(int authorId, string userId)
-    {
-        return _context.Authors.AnyAsync(a => a.Id == authorId && a.UserId == userId);
     }
 }

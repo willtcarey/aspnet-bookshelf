@@ -1,9 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Bookshelf.Data;
 using Bookshelf.Models;
+using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -11,11 +10,11 @@ namespace Bookshelf.Controllers;
 [Authorize]
 public class AuthorsController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly AuthorRepository _authors;
 
-    public AuthorsController(ApplicationDbContext context)
+    public AuthorsController(AuthorRepository authors)
     {
-        _context = context;
+        _authors = authors;
     }
 
     private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -23,10 +22,7 @@ public class AuthorsController : Controller
     // GET: Authors
     public async Task<IActionResult> Index()
     {
-        var authors = await _context.Authors
-            .Where(a => a.UserId == CurrentUserId)
-            .ToListAsync();
-
+        var authors = await _authors.ListAsync(CurrentUserId);
         return View(authors);
     }
 
@@ -35,10 +31,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors
-            .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
-
+        var author = await _authors.FindWithBooksAsync(id.Value, CurrentUserId);
         if (author == null) return NotFound();
 
         return View(author);
@@ -57,13 +50,9 @@ public class AuthorsController : Controller
     {
         if (ModelState.IsValid)
         {
-            var author = new Author
-            {
-                Name = viewModel.Name,
-                UserId = CurrentUserId
-            };
-            _context.Add(author);
-            await _context.SaveChangesAsync();
+            var author = new Author { Name = viewModel.Name };
+            _authors.Add(author, CurrentUserId);
+            await _authors.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -75,9 +64,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
-
+        var author = await _authors.FindAsync(id.Value, CurrentUserId);
         if (author == null) return NotFound();
 
         var viewModel = new AuthorFormViewModel
@@ -97,20 +84,18 @@ public class AuthorsController : Controller
 
         if (ModelState.IsValid)
         {
-            var author = await _context.Authors
-                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
-
+            var author = await _authors.FindAsync(id, CurrentUserId);
             if (author == null) return NotFound();
 
             author.Name = viewModel.Name;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _authors.SaveAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
             {
-                if (!await _context.Authors.AnyAsync(a => a.Id == id && a.UserId == CurrentUserId))
+                if (!await _authors.ExistsAsync(id, CurrentUserId))
                     return NotFound();
                 throw;
             }
@@ -125,10 +110,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors
-            .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
-
+        var author = await _authors.FindWithBooksAsync(id.Value, CurrentUserId);
         if (author == null) return NotFound();
 
         return View(author);
@@ -139,13 +121,11 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var author = await _context.Authors
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == CurrentUserId);
-
+        var author = await _authors.FindAsync(id, CurrentUserId);
         if (author != null)
         {
-            _context.Authors.Remove(author);
-            await _context.SaveChangesAsync();
+            _authors.Remove(author);
+            await _authors.SaveAsync();
         }
         return RedirectToAction(nameof(Index));
     }
