@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Bookshelf.Models;
@@ -17,12 +16,10 @@ public class AuthorsController : Controller
         _authors = authors;
     }
 
-    private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
     // GET: Authors
     public async Task<IActionResult> Index()
     {
-        var authors = await _authors.ListAsync(CurrentUserId);
+        var authors = await _authors.ListAsync();
         return View(authors);
     }
 
@@ -31,7 +28,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _authors.FindWithBooksAsync(id.Value, CurrentUserId);
+        var author = await _authors.FindWithBooksAsync(id.Value);
         if (author == null) return NotFound();
 
         return View(author);
@@ -51,7 +48,7 @@ public class AuthorsController : Controller
         if (ModelState.IsValid)
         {
             var author = new Author { Name = viewModel.Name };
-            _authors.Add(author, CurrentUserId);
+            _authors.Add(author);
             await _authors.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
@@ -64,7 +61,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _authors.FindAsync(id.Value, CurrentUserId);
+        var author = await _authors.FindAsync(id.Value);
         if (author == null) return NotFound();
 
         var viewModel = new AuthorFormViewModel
@@ -84,7 +81,7 @@ public class AuthorsController : Controller
 
         if (ModelState.IsValid)
         {
-            var author = await _authors.FindAsync(id, CurrentUserId);
+            var author = await _authors.FindAsync(id);
             if (author == null) return NotFound();
 
             author.Name = viewModel.Name;
@@ -95,7 +92,7 @@ public class AuthorsController : Controller
             }
             catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
             {
-                if (!await _authors.ExistsAsync(id, CurrentUserId))
+                if (!await _authors.ExistsAsync(id))
                     return NotFound();
                 throw;
             }
@@ -110,7 +107,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _authors.FindWithBooksAsync(id.Value, CurrentUserId);
+        var author = await _authors.FindWithBooksAsync(id.Value);
         if (author == null) return NotFound();
 
         return View(author);
@@ -121,7 +118,7 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var author = await _authors.FindAsync(id, CurrentUserId);
+        var author = await _authors.FindAsync(id);
         if (author != null)
         {
             _authors.Remove(author);
