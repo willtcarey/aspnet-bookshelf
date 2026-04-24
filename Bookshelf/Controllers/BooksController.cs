@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Bookshelf.Models;
 using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
@@ -50,21 +49,10 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookFormViewModel viewModel)
     {
-        // Defense in depth: never trust the AuthorId from the form. Even though the
-        // dropdown only renders this user's authors, a hand-crafted POST could submit
-        // any id. Reject anything that isn't owned by the current user.
-        if (!await _books.IsOwnedAuthorAsync(viewModel.AuthorId))
-        {
-            ModelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
-        }
-
         if (ModelState.IsValid)
         {
-            var book = new Book();
-            ApplyFormData(book, viewModel);
-            _books.Add(book);
-            await _books.SaveAsync();
-            return RedirectToAction(nameof(Index));
+            var result = await _books.CreateAsync(viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
         }
 
         viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
@@ -100,21 +88,11 @@ public class BooksController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
-        var book = await _books.FindAsync(id);
-        if (book == null) return NotFound();
-
-        // Defense in depth: same as Create -- reject AuthorIds that don't belong
-        // to the current user, even though the dropdown wouldn't offer them.
-        if (!await _books.IsOwnedAuthorAsync(viewModel.AuthorId))
-        {
-            ModelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
-        }
-
         if (ModelState.IsValid)
         {
-            ApplyFormData(book, viewModel);
-            await _books.SaveAsync();
-            return RedirectToAction(nameof(Index));
+            var result = await _books.UpdateAsync(id, viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            if (result == RepositoryResult.NotFound) return NotFound();
         }
 
         viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
@@ -145,14 +123,5 @@ public class BooksController : Controller
         }
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private static void ApplyFormData(Book book, BookFormViewModel viewModel)
-    {
-        book.Title = viewModel.Title;
-        book.Isbn = viewModel.Isbn;
-        book.Year = viewModel.Year;
-        book.AuthorId = viewModel.AuthorId;
-        book.CoverImagePath = viewModel.CoverImagePath;
     }
 }
