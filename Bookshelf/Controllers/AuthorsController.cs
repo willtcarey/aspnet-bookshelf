@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Bookshelf.Models;
 using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
@@ -47,10 +46,8 @@ public class AuthorsController : Controller
     {
         if (ModelState.IsValid)
         {
-            var author = new Author { Name = viewModel.Name };
-            _authors.Add(author);
-            await _authors.SaveAsync();
-            return RedirectToAction(nameof(Index));
+            var result = await _authors.CreateAsync(viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
         }
 
         return View(viewModel);
@@ -81,22 +78,9 @@ public class AuthorsController : Controller
 
         if (ModelState.IsValid)
         {
-            var author = await _authors.FindAsync(id);
-            if (author == null) return NotFound();
-
-            author.Name = viewModel.Name;
-
-            try
-            {
-                await _authors.SaveAsync();
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
-            {
-                if (!await _authors.ExistsAsync(id))
-                    return NotFound();
-                throw;
-            }
-            return RedirectToAction(nameof(Index));
+            var result = await _authors.UpdateAsync(id, viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            if (result == RepositoryResult.NotFound) return NotFound();
         }
 
         return View(viewModel);
