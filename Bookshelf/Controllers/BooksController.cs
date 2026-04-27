@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Bookshelf.Data;
-using Bookshelf.Models;
+using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -11,34 +8,26 @@ namespace Bookshelf.Controllers;
 [Authorize]
 public class BooksController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly BookRepository _books;
 
-    public BooksController(ApplicationDbContext context)
+    public BooksController(BookRepository books)
     {
-        _context = context;
+        _books = books;
     }
 
     // GET: Books
-    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
-        var books = await _context.Books
-            .Include(b => b.Author)
-            .ToListAsync();
-
+        var books = await _books.ListAsync();
         return View(books);
     }
 
     // GET: Books/Details/5
-    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
-        var book = await _context.Books
-            .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id);
-
+        var book = await _books.FindWithAuthorAsync(id.Value);
         if (book == null) return NotFound();
 
         return View(book);
@@ -49,7 +38,7 @@ public class BooksController : Controller
     {
         var viewModel = new BookFormViewModel
         {
-            Authors = await BuildAuthorsSelectListAsync()
+            Authors = await _books.BuildAuthorsSelectListAsync()
         };
 
         return View(viewModel);
@@ -62,13 +51,11 @@ public class BooksController : Controller
     {
         if (ModelState.IsValid)
         {
-            var book = new Book();
-            _context.Add(book);
-            await ApplyAndSaveAsync(book, viewModel);
-            return RedirectToAction(nameof(Index));
+            var result = await _books.CreateAsync(viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
         }
 
-        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
+        viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -77,7 +64,7 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var book = await _context.Books.FindAsync(id);
+        var book = await _books.FindAsync(id.Value);
         if (book == null) return NotFound();
 
         var viewModel = new BookFormViewModel
@@ -88,7 +75,7 @@ public class BooksController : Controller
             Year = book.Year,
             AuthorId = book.AuthorId,
             CoverImagePath = book.CoverImagePath,
-            Authors = await BuildAuthorsSelectListAsync(book.AuthorId)
+            Authors = await _books.BuildAuthorsSelectListAsync(book.AuthorId)
         };
 
         return View(viewModel);
@@ -101,16 +88,14 @@ public class BooksController : Controller
     {
         if (id != viewModel.Id) return NotFound();
 
-        var book = await _context.Books.FindAsync(id);
-        if (book == null) return NotFound();
-
         if (ModelState.IsValid)
         {
-            await ApplyAndSaveAsync(book, viewModel);
-            return RedirectToAction(nameof(Index));
+            var result = await _books.UpdateAsync(id, viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            if (result == RepositoryResult.NotFound) return NotFound();
         }
 
-        viewModel.Authors = await BuildAuthorsSelectListAsync(viewModel.AuthorId);
+        viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
         return View(viewModel);
     }
 
@@ -119,10 +104,7 @@ public class BooksController : Controller
     {
         if (id == null) return NotFound();
 
-        var book = await _context.Books
-            .Include(b => b.Author)
-            .FirstOrDefaultAsync(b => b.Id == id);
-
+        var book = await _books.FindWithAuthorAsync(id.Value);
         if (book == null) return NotFound();
 
         return View(book);
@@ -133,37 +115,13 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var book = await _context.Books.FindAsync(id);
+        var book = await _books.FindAsync(id);
         if (book != null)
         {
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
+            _books.Remove(book);
+            await _books.SaveAsync();
         }
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private async Task ApplyAndSaveAsync(Book book, BookFormViewModel viewModel)
-    {
-        book.Title = viewModel.Title;
-        book.Isbn = viewModel.Isbn;
-        book.Year = viewModel.Year;
-        book.AuthorId = viewModel.AuthorId;
-        book.CoverImagePath = viewModel.CoverImagePath;
-
-        await _context.SaveChangesAsync();
-    }
-
-    // TODO: This builds view-specific presentation data (SelectList) from a DB query.
-    // Should this live somewhere else? Every controller that needs an author dropdown
-    // would duplicate this. Could move to a shared service, a view component, or a
-    // method on the DbContext/repository.
-    private async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)
-    {
-        var authors = await _context.Authors
-            .OrderBy(author => author.Name)
-            .ToListAsync();
-
-        return new SelectList(authors, "Id", "Name", selectedAuthorId);
     }
 }

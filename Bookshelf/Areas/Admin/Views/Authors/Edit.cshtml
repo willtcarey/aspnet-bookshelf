@@ -15,6 +15,7 @@
 
             <form asp-area="Admin" asp-controller="Authors" asp-action="Edit" asp-route-id="@Model.Id" class="space-y-5">
                 <input type="hidden" asp-for="Id" />
+                <form-select asp-for="UserId" label="Owner" asp-items="Model.Users" placeholder="Select an owner" />
                 <form-text asp-for="Name" />
 
                 <div class="flex flex-wrap gap-3 pt-2">

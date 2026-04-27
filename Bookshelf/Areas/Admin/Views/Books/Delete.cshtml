@@ -30,7 +30,11 @@
                     }
                 </div>
 
-                <div class="grid gap-4 sm:grid-cols-3">
+                <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                    <div>
+                        <div class="text-sm uppercase tracking-wide text-base-content/60">Owner</div>
+                        <div class="mt-2 font-semibold">@Model.Author.User.Email</div>
+                    </div>
                     <div>
                         <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
                         <div class="mt-2 font-semibold">@Model.Author.Name</div>

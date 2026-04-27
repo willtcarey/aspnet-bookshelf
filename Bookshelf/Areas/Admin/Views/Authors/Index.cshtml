@@ -24,6 +24,7 @@
                         <thead>
                             <tr>
                                 <sortable-column name="name" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Name</sortable-column>
+                                <sortable-column name="owner" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Owner</sortable-column>
                                 <th class="text-right">Actions</th>
                             </tr>
                         </thead>
@@ -34,6 +35,7 @@
                                     <td>
                                         <div class="font-semibold">@author.Name</div>
                                     </td>
+                                    <td>@author.User.Email</td>
                                     <td>
                                         <div class="flex justify-end gap-2">
                                             <a class="btn btn-ghost btn-sm" asp-area="Admin" asp-controller="Authors" asp-action="Edit" asp-route-id="@author.Id">Edit</a>

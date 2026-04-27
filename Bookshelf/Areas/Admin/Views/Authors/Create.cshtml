@@ -14,6 +14,7 @@
             <div asp-validation-summary="ModelOnly" class="@(ViewData.ModelState.ErrorCount > 0 ? "alert alert-error" : "hidden") text-sm"></div>
 
             <form asp-area="Admin" asp-controller="Authors" asp-action="Create" class="space-y-5">
+                <form-select asp-for="UserId" label="Owner" asp-items="Model.Users" placeholder="Select an owner" />
                 <form-text asp-for="Name" />
 
                 <div class="flex flex-wrap gap-3 pt-2">

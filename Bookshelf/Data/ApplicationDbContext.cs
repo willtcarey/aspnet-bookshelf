@@ -24,6 +24,28 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<Book> Books => Set<Book>();
     public DbSet<Author> Authors => Set<Author>();
 
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        // Per-user ownership (issue #1).
+        //
+        // Authors belong directly to a user. Books inherit ownership through
+        // their Author (Author -> User), so Books don't need their own UserId.
+        // The existing Author -> Book cascade on FK_Books_Authors_AuthorId means
+        // deleting a user cascades: User -> Authors -> Books.
+        builder.Entity<Author>(entity =>
+        {
+            entity.HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(a => a.UserId);
+        });
+    }
+
     // Automatically manages file lifecycle for properties marked with [FileAttachment].
     //
     // Uses the change tracker to handle cleanup:

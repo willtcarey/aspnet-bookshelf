@@ -1,5 +1,6 @@
 using Bookshelf.Data;
 using Bookshelf.Models;
+using Bookshelf.Repositories;
 using Bookshelf.Services;
 using Bookshelf.Security;
 using Hangfire;
@@ -40,6 +41,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpLogging(o => { });
+builder.Services.AddScoped<BookRepository>();
+builder.Services.AddScoped<AuthorRepository>();
 builder.Services.AddSingleton<UploadStoragePaths>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddSingleton<IImageProcessor, ImageSharpImageProcessor>();

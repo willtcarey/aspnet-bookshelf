@@ -26,6 +26,7 @@
                                 <th class="w-16">Cover</th>
                                 <sortable-column name="title" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Title</sortable-column>
                                 <sortable-column name="author" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Author</sortable-column>
+                                <sortable-column name="owner" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Owner</sortable-column>
                                 <sortable-column name="year" current-sort="@Model.SortColumn" current-direction="@Model.SortDirection">Year</sortable-column>
                                 <th>ISBN</th>
                                 <th class="text-right">Actions</th>
@@ -51,6 +52,7 @@
                                         <div class="font-semibold">@book.Title</div>
                                     </td>
                                     <td>@book.Author.Name</td>
+                                    <td>@book.Author.User.Email</td>
                                     <td>@(book.Year?.ToString() ?? "—")</td>
                                     <td>@(string.IsNullOrWhiteSpace(book.Isbn) ? "—" : book.Isbn)</td>
                                     <td>

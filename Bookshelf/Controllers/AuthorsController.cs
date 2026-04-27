@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Bookshelf.Data;
-using Bookshelf.Models;
+using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
 namespace Bookshelf.Controllers;
@@ -10,31 +8,26 @@ namespace Bookshelf.Controllers;
 [Authorize]
 public class AuthorsController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly AuthorRepository _authors;
 
-    public AuthorsController(ApplicationDbContext context)
+    public AuthorsController(AuthorRepository authors)
     {
-        _context = context;
+        _authors = authors;
     }
 
     // GET: Authors
-    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
-        var authors = await _context.Authors.ToListAsync();
+        var authors = await _authors.ListAsync();
         return View(authors);
     }
 
     // GET: Authors/Details/5
-    [AllowAnonymous]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors
-            .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id);
-
+        var author = await _authors.FindWithBooksAsync(id.Value);
         if (author == null) return NotFound();
 
         return View(author);
@@ -53,10 +46,8 @@ public class AuthorsController : Controller
     {
         if (ModelState.IsValid)
         {
-            var author = new Author { Name = viewModel.Name };
-            _context.Add(author);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            var result = await _authors.CreateAsync(viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
         }
 
         return View(viewModel);
@@ -67,7 +58,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors.FindAsync(id);
+        var author = await _authors.FindAsync(id.Value);
         if (author == null) return NotFound();
 
         var viewModel = new AuthorFormViewModel
@@ -87,22 +78,9 @@ public class AuthorsController : Controller
 
         if (ModelState.IsValid)
         {
-            var author = await _context.Authors.FindAsync(id);
-            if (author == null) return NotFound();
-
-            author.Name = viewModel.Name;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await _context.Authors.AnyAsync(a => a.Id == id))
-                    return NotFound();
-                throw;
-            }
-            return RedirectToAction(nameof(Index));
+            var result = await _authors.UpdateAsync(id, viewModel, ModelState);
+            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            if (result == RepositoryResult.NotFound) return NotFound();
         }
 
         return View(viewModel);
@@ -113,10 +91,7 @@ public class AuthorsController : Controller
     {
         if (id == null) return NotFound();
 
-        var author = await _context.Authors
-            .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id);
-
+        var author = await _authors.FindWithBooksAsync(id.Value);
         if (author == null) return NotFound();
 
         return View(author);
@@ -127,11 +102,11 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var author = await _context.Authors.FindAsync(id);
+        var author = await _authors.FindAsync(id);
         if (author != null)
         {
-            _context.Authors.Remove(author);
-            await _context.SaveChangesAsync();
+            _authors.Remove(author);
+            await _authors.SaveAsync();
         }
         return RedirectToAction(nameof(Index));
     }

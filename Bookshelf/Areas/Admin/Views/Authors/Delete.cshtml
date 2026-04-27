@@ -23,9 +23,15 @@
                 </div>
             }
 
-            <div>
-                <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
-                <div class="mt-2 text-xl font-semibold">@Model.Name</div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">Author</div>
+                    <div class="mt-2 text-xl font-semibold">@Model.Name</div>
+                </div>
+                <div>
+                    <div class="text-sm uppercase tracking-wide text-base-content/60">Owner</div>
+                    <div class="mt-2 text-xl font-semibold">@Model.User.Email</div>
+                </div>
             </div>
 
             @if (Model.Books.Any())
