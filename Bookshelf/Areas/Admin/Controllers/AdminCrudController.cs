@@ -29,6 +29,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     protected virtual Task PopulateFormDataAsync(TFormViewModel viewModel) => Task.CompletedTask;
 
     // GET: Admin/{Resource}
+    [HttpGet]
     public async Task<IActionResult> Index(int page = 1, string? sort = null, string? dir = null)
     {
         var query = GetBaseQuery();
@@ -38,6 +39,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     }
 
     // GET: Admin/{Resource}/Create
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var viewModel = new TFormViewModel();
@@ -63,6 +65,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     }
 
     // GET: Admin/{Resource}/Edit/5
+    [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -107,6 +110,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     }
 
     // GET: Admin/{Resource}/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();

@@ -23,7 +23,7 @@ public class ImageUpload
     private static readonly ImageFormat JpgFormat = new("jpg", ".jpg", "image/jpeg");
     private static readonly ImageFormat PngFormat = new("png", ".png", "image/png");
     private static readonly ImageFormat WebpFormat = new("webp", ".webp", "image/webp");
-    private static readonly IReadOnlyDictionary<string, ImageFormat> Formats = new Dictionary<string, ImageFormat>(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, ImageFormat> Formats = new(StringComparer.OrdinalIgnoreCase)
     {
         [JpgFormat.Name] = JpgFormat,
         ["jpeg"] = JpgFormat,

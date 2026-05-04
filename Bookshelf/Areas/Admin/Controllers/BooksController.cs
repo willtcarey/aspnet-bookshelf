@@ -33,31 +33,31 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
         CoverImagePath = entity.CoverImagePath
     };
 
-    protected override Book CreateEntity(AdminBookFormViewModel vm) => new()
+    protected override Book CreateEntity(AdminBookFormViewModel viewModel) => new()
     {
-        Title = vm.Title,
-        Isbn = vm.Isbn,
-        Year = vm.Year,
-        AuthorId = vm.AuthorId,
-        CoverImagePath = vm.CoverImagePath
+        Title = viewModel.Title,
+        Isbn = viewModel.Isbn,
+        Year = viewModel.Year,
+        AuthorId = viewModel.AuthorId,
+        CoverImagePath = viewModel.CoverImagePath
     };
 
-    protected override void UpdateEntity(Book entity, AdminBookFormViewModel vm)
+    protected override void UpdateEntity(Book entity, AdminBookFormViewModel viewModel)
     {
-        entity.Title = vm.Title;
-        entity.Isbn = vm.Isbn;
-        entity.Year = vm.Year;
-        entity.AuthorId = vm.AuthorId;
-        entity.CoverImagePath = vm.CoverImagePath;
+        entity.Title = viewModel.Title;
+        entity.Isbn = viewModel.Isbn;
+        entity.Year = viewModel.Year;
+        entity.AuthorId = viewModel.AuthorId;
+        entity.CoverImagePath = viewModel.CoverImagePath;
     }
 
-    protected override async Task PopulateFormDataAsync(AdminBookFormViewModel vm)
+    protected override async Task PopulateFormDataAsync(AdminBookFormViewModel viewModel)
     {
         var authors = await Context.Authors
             .Include(a => a.User)
             .OrderBy(a => a.Name)
             .Select(a => new { a.Id, Label = $"{a.Name} ({a.User.Email})" })
             .ToListAsync();
-        vm.Authors = new SelectList(authors, "Id", "Label", vm.AuthorId);
+        viewModel.Authors = new SelectList(authors, "Id", "Label", viewModel.AuthorId);
     }
 }

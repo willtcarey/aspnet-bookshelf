@@ -16,6 +16,7 @@ public class AccountController : Controller
     }
 
     // GET: Account/Register
+    [HttpGet]
     public IActionResult Register()
     {
         return View();
@@ -47,6 +48,7 @@ public class AccountController : Controller
     }
 
     // GET: Account/Login
+    [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;

@@ -7,8 +7,8 @@ namespace Bookshelf.TagHelpers;
 
 public abstract class FormTagHelperBase : TagHelper
 {
-    protected readonly IHtmlGenerator Generator;
-    protected readonly HtmlEncoder Encoder;
+    protected IHtmlGenerator Generator { get; }
+    protected HtmlEncoder Encoder { get; }
 
     [HtmlAttributeNotBound]
     [ViewContext]

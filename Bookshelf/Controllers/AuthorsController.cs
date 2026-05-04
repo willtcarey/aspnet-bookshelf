@@ -16,6 +16,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         var authors = await _authors.ListAsync();
@@ -23,6 +24,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Details/5
+    [HttpGet]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -34,6 +36,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Create
+    [HttpGet]
     public IActionResult Create()
     {
         return View(new AuthorFormViewModel());
@@ -54,6 +57,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Edit/5
+    [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -87,6 +91,7 @@ public class AuthorsController : Controller
     }
 
     // GET: Authors/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();

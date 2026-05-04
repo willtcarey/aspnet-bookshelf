@@ -35,21 +35,21 @@ public class AuthorsController : AdminCrudController<Author, AdminAuthorFormView
         UserId = entity.UserId
     };
 
-    protected override Author CreateEntity(AdminAuthorFormViewModel vm) => new()
+    protected override Author CreateEntity(AdminAuthorFormViewModel viewModel) => new()
     {
-        Name = vm.Name,
-        UserId = vm.UserId
+        Name = viewModel.Name,
+        UserId = viewModel.UserId
     };
 
-    protected override void UpdateEntity(Author entity, AdminAuthorFormViewModel vm)
+    protected override void UpdateEntity(Author entity, AdminAuthorFormViewModel viewModel)
     {
-        entity.Name = vm.Name;
-        entity.UserId = vm.UserId;
+        entity.Name = viewModel.Name;
+        entity.UserId = viewModel.UserId;
     }
 
-    protected override async Task PopulateFormDataAsync(AdminAuthorFormViewModel vm)
+    protected override async Task PopulateFormDataAsync(AdminAuthorFormViewModel viewModel)
     {
         var users = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
-        vm.Users = new SelectList(users, "Id", "Email", vm.UserId);
+        viewModel.Users = new SelectList(users, "Id", "Email", viewModel.UserId);
     }
 }

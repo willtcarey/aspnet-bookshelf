@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Bookshelf.Helpers;
 using Bookshelf.Areas.Admin.ViewModels;
 using Bookshelf.Security;
@@ -21,6 +20,7 @@ public class UsersController : AdminController
     }
 
     // GET: Admin/Users
+    [HttpGet]
     public async Task<IActionResult> Index(int page = 1, string? sort = null, string? dir = null)
     {
         IQueryable<IdentityUser> query = _userManager.Users;

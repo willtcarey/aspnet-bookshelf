@@ -16,6 +16,7 @@ public class DashboardController : AdminController
         _userManager = userManager;
     }
 
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         ViewData["BookCount"] = await _context.Books.CountAsync();

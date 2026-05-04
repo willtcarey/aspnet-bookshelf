@@ -16,6 +16,7 @@ public class BooksController : Controller
     }
 
     // GET: Books
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         var books = await _books.ListAsync();
@@ -23,6 +24,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Details/5
+    [HttpGet]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -34,6 +36,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Create
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var viewModel = new BookFormViewModel
@@ -60,6 +63,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Edit/5
+    [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -100,6 +104,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
