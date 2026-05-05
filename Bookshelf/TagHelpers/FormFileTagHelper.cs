@@ -32,6 +32,8 @@ public class FormFileTagHelper : FormTagHelperBase
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         var existingPath = For.Model as string;
         var hasExistingImage = !string.IsNullOrWhiteSpace(existingPath);
 

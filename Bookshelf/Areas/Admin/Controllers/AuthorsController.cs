@@ -28,27 +28,42 @@ public class AuthorsController : AdminCrudController<Author, AdminAuthorFormView
     };
     protected override Expression<Func<Author, object?>> DefaultSort => a => a.Name;
 
-    protected override AdminAuthorFormViewModel MapToViewModel(Author entity) => new()
+    protected override AdminAuthorFormViewModel MapToViewModel(Author entity)
     {
-        Id = entity.Id,
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new()
+        {
+            Id = entity.Id,
         Name = entity.Name,
         UserId = entity.UserId
-    };
+        };
+    }
 
-    protected override Author CreateEntity(AdminAuthorFormViewModel viewModel) => new()
+    protected override Author CreateEntity(AdminAuthorFormViewModel viewModel)
     {
-        Name = viewModel.Name,
-        UserId = viewModel.UserId
-    };
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        return new()
+        {
+            Name = viewModel.Name,
+            UserId = viewModel.UserId
+        };
+    }
 
     protected override void UpdateEntity(Author entity, AdminAuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         entity.Name = viewModel.Name;
         entity.UserId = viewModel.UserId;
     }
 
     protected override async Task PopulateFormDataAsync(AdminAuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         var users = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
         viewModel.Users = new SelectList(users, "Id", "Email", viewModel.UserId);
     }

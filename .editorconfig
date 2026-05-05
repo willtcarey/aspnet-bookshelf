@@ -152,8 +152,8 @@ dotnet_naming_style.camel_case_style.capitalization = camel_case
 
 # --- Rules to DISABLE for this project (noise / not applicable) ---
 
-# CA1002: Do not expose generic lists – too strict for MVC view models
-dotnet_diagnostic.CA1002.severity = none
+# CA1002: Do not expose generic lists – real design concern, keep as guidance
+dotnet_diagnostic.CA1002.severity = suggestion
 
 # CA1014: Mark assemblies with CLSCompliant – not needed
 dotnet_diagnostic.CA1014.severity = none
@@ -161,17 +161,18 @@ dotnet_diagnostic.CA1014.severity = none
 # CA1034: Nested types should not be visible – used in result types
 dotnet_diagnostic.CA1034.severity = none
 
-# CA1062: Validate arguments of public methods – redundant with nullable ref types
-dotnet_diagnostic.CA1062.severity = none
+# CA1062: Validate arguments of public methods – keep on globally, disable for controllers
+# where the framework guarantees non-null via model binding
+dotnet_diagnostic.CA1062.severity = warning
 
-# CA1305: Specify IFormatProvider – too noisy for web app logging/string ops
-dotnet_diagnostic.CA1305.severity = none
+# CA1305: Specify IFormatProvider – prevents culture-sensitive formatting bugs
+dotnet_diagnostic.CA1305.severity = suggestion
 
-# CA1307: Specify StringComparison for clarity – noisy
-dotnet_diagnostic.CA1307.severity = none
+# CA1307: Specify StringComparison for clarity – prevents culture-sensitive string bugs
+dotnet_diagnostic.CA1307.severity = suggestion
 
-# CA1310: Specify StringComparison for correctness – noisy in LINQ-to-SQL
-dotnet_diagnostic.CA1310.severity = none
+# CA1310: Specify StringComparison for correctness – prevents culture-sensitive string bugs
+dotnet_diagnostic.CA1310.severity = suggestion
 
 # CA1515: Consider making public types internal – MVC requires public controllers
 dotnet_diagnostic.CA1515.severity = none
@@ -182,10 +183,11 @@ dotnet_diagnostic.CA1805.severity = none
 # CA1848: Use LoggerMessage delegates – overkill for this app size
 dotnet_diagnostic.CA1848.severity = none
 
-# CA1849: Call async methods when in an async method – too many false positives
-dotnet_diagnostic.CA1849.severity = none
+# CA1849: Call async methods when in an async method – catches thread-blocking bugs
+dotnet_diagnostic.CA1849.severity = suggestion
 
 # CA2007: Do not directly await a Task (ConfigureAwait) – not needed in ASP.NET Core
+# See docs/dev/disabled-analyzer-rules.md for justification and sources
 dotnet_diagnostic.CA2007.severity = none
 
 # CA1724: Type names should not match namespaces – conflicts with common model names
@@ -195,6 +197,8 @@ dotnet_diagnostic.CA1724.severity = none
 dotnet_diagnostic.CA1716.severity = none
 
 # CA1054/CA1055/CA1056: URI parameters/return values/properties should not be strings
+# ASP.NET Core framework APIs use strings for URLs throughout
+# See docs/dev/disabled-analyzer-rules.md for justification and sources
 dotnet_diagnostic.CA1054.severity = none
 dotnet_diagnostic.CA1055.severity = none
 dotnet_diagnostic.CA1056.severity = none
@@ -211,29 +215,32 @@ dotnet_diagnostic.CA1852.severity = none
 # CA1308: Normalize strings to uppercase – lowercase is fine for web URLs
 dotnet_diagnostic.CA1308.severity = none
 
-# CA1508: Avoid dead conditional code - false positives
-dotnet_diagnostic.CA1508.severity = none
+# CA1508: Avoid dead conditional code – catches logic issues
+dotnet_diagnostic.CA1508.severity = suggestion
 
-# CA2227: Collection properties should be read only – EF Core requires setters on navigation properties
-dotnet_diagnostic.CA2227.severity = none
+# CA2227: Collection properties should be read only – EF works fine with read-only collections
+dotnet_diagnostic.CA2227.severity = suggestion
 
 # CA1000: Do not declare static members on generic types – PaginatedList.CreateAsync is idiomatic
 dotnet_diagnostic.CA1000.severity = none
 
-# CA3003: Path injection – false positives; paths are validated/normalized before file operations
+# CA3003: Path injection – analyzer cannot recognize sanitization patterns.
+# Tried increasing interprocedural analysis depth (max_interprocedural_method_call_chain = 10)
+# and context-sensitive analysis — still flags. The analyzer has no concept of a "sanitizer."
+# See docs/dev/disabled-analyzer-rules.md for full justification and sources.
 dotnet_diagnostic.CA3003.severity = none
 
-# IDE0058: Expression value is never used – noisy with EF/builder patterns
-dotnet_diagnostic.IDE0058.severity = none
+# IDE0058: Expression value is never used – can flag real mistakes
+dotnet_diagnostic.IDE0058.severity = suggestion
 
 # IDE0005: Using directive is unnecessary – let the formatter handle this
 dotnet_diagnostic.IDE0005.severity = warning
 
-# IDE0046: Use conditional expression for return – can harm readability
-dotnet_diagnostic.IDE0046.severity = none
+# IDE0046: Use conditional expression for return – style guidance
+dotnet_diagnostic.IDE0046.severity = suggestion
 
-# IDE0045: Use conditional expression for assignment – can harm readability
-dotnet_diagnostic.IDE0045.severity = none
+# IDE0045: Use conditional expression for assignment – style guidance
+dotnet_diagnostic.IDE0045.severity = suggestion
 
 # IDE0130: Namespace does not match folder structure
 dotnet_diagnostic.IDE0130.severity = warning

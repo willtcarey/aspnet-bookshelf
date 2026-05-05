@@ -83,6 +83,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, TFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (id != viewModel.Id) return NotFound();
 
         var entity = await DbSet.FindAsync(id);

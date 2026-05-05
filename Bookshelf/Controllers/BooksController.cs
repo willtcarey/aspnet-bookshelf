@@ -52,6 +52,8 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (ModelState.IsValid)
         {
             var result = await _books.CreateAsync(viewModel, ModelState);
@@ -90,6 +92,8 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, BookFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (id != viewModel.Id) return NotFound();
 
         if (ModelState.IsValid)

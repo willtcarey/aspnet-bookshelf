@@ -22,6 +22,8 @@ public class BookRepository
 
     public BookRepository(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
     {
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+
         _context = context;
         _userId = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("BookRepository requires an authenticated user.");
@@ -56,6 +58,9 @@ public class BookRepository
     /// </summary>
     public async Task<RepositoryResult> CreateAsync(BookFormViewModel viewModel, ModelStateDictionary modelState)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(modelState);
+
         if (!await ValidateAsync(viewModel, modelState))
         {
             return RepositoryResult.ValidationFailed;
@@ -76,6 +81,9 @@ public class BookRepository
     /// </summary>
     public async Task<RepositoryResult> UpdateAsync(int id, BookFormViewModel viewModel, ModelStateDictionary modelState)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(modelState);
+
         var book = await FindAsync(id);
         if (book == null)
         {

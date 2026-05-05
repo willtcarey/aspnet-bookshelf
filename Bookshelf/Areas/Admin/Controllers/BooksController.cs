@@ -23,27 +23,40 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
     };
     protected override Expression<Func<Book, object?>> DefaultSort => b => b.Title;
 
-    protected override AdminBookFormViewModel MapToViewModel(Book entity) => new()
+    protected override AdminBookFormViewModel MapToViewModel(Book entity)
     {
-        Id = entity.Id,
-        Title = entity.Title,
-        Isbn = entity.Isbn,
-        Year = entity.Year,
-        AuthorId = entity.AuthorId,
-        CoverImagePath = entity.CoverImagePath
-    };
+        ArgumentNullException.ThrowIfNull(entity);
 
-    protected override Book CreateEntity(AdminBookFormViewModel viewModel) => new()
+        return new()
+        {
+            Id = entity.Id,
+            Title = entity.Title,
+            Isbn = entity.Isbn,
+            Year = entity.Year,
+            AuthorId = entity.AuthorId,
+            CoverImagePath = entity.CoverImagePath
+        };
+    }
+
+    protected override Book CreateEntity(AdminBookFormViewModel viewModel)
     {
-        Title = viewModel.Title,
-        Isbn = viewModel.Isbn,
-        Year = viewModel.Year,
-        AuthorId = viewModel.AuthorId,
-        CoverImagePath = viewModel.CoverImagePath
-    };
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        return new()
+        {
+            Title = viewModel.Title,
+            Isbn = viewModel.Isbn,
+            Year = viewModel.Year,
+            AuthorId = viewModel.AuthorId,
+            CoverImagePath = viewModel.CoverImagePath
+        };
+    }
 
     protected override void UpdateEntity(Book entity, AdminBookFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         entity.Title = viewModel.Title;
         entity.Isbn = viewModel.Isbn;
         entity.Year = viewModel.Year;
@@ -53,6 +66,8 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
 
     protected override async Task PopulateFormDataAsync(AdminBookFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         var authors = await Context.Authors
             .Include(a => a.User)
             .OrderBy(a => a.Name)

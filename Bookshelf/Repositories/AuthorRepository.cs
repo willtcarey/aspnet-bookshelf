@@ -19,6 +19,8 @@ public class AuthorRepository
 
     public AuthorRepository(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
     {
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+
         _context = context;
         _userId = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("AuthorRepository requires an authenticated user.");
@@ -51,6 +53,8 @@ public class AuthorRepository
     /// </summary>
     public async Task<RepositoryResult> CreateAsync(AuthorFormViewModel viewModel, ModelStateDictionary modelState)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         var author = new Author { UserId = _userId };
         ApplyFormData(author, viewModel);
         _context.Authors.Add(author);
@@ -67,6 +71,8 @@ public class AuthorRepository
     /// </summary>
     public async Task<RepositoryResult> UpdateAsync(int id, AuthorFormViewModel viewModel, ModelStateDictionary modelState)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         var author = await FindAsync(id);
         if (author == null)
         {

@@ -22,6 +22,8 @@ public class SortableColumnTagHelper : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         output.TagName = "th";
         output.TagMode = TagMode.StartTagAndEndTag;
 

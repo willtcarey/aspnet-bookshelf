@@ -32,6 +32,8 @@ public abstract class FormTagHelperBase : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         output.TagName = "fieldset";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("class", WrapperClasses);
@@ -55,6 +57,8 @@ public abstract class FormTagHelperBase : TagHelper
     protected virtual void RenderContent(
         TagHelperOutput output, TagBuilder labelTag, TagBuilder inputTag, TagBuilder validationTag)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         output.Content.AppendHtml(labelTag);
         output.Content.AppendHtml(inputTag);
         output.Content.AppendHtml(validationTag);

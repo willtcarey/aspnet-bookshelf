@@ -9,6 +9,9 @@ public class UploadStoragePaths
 
     public UploadStoragePaths(IWebHostEnvironment environment, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(environment);
+        ArgumentNullException.ThrowIfNull(configuration);
+
         var webRootPath = environment.WebRootPath;
         if (string.IsNullOrWhiteSpace(webRootPath))
         {

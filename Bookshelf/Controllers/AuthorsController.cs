@@ -78,6 +78,8 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (id != viewModel.Id) return NotFound();
 
         if (ModelState.IsValid)

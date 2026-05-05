@@ -11,6 +11,9 @@ public class LocalFileStorage : IFileStorage
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType)
     {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(contentType);
+
         var extension = ResolveExtension(fileName, contentType);
         var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
         var fullPath = Path.Combine(_paths.UploadRootPath, uniqueFileName);

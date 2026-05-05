@@ -45,6 +45,7 @@ public class ImageUpload
         _paths = paths;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Parameter is intentionally nullable; null is handled gracefully.")]
     public async Task<UploadResult> SaveAsync(IFormFile? file)
     {
         if (file is not { Length: > 0 })
