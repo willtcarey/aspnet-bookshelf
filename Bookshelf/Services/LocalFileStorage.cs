@@ -77,15 +77,17 @@ public class LocalFileStorage : IFileStorage
         var extension = Path.GetExtension(Path.GetFileName(fileName));
         if (!string.IsNullOrWhiteSpace(extension))
         {
+#pragma warning disable CA1308 // File extensions must be lowercase for filesystem conventions
             return extension.ToLowerInvariant();
+#pragma warning restore CA1308
         }
 
-        return contentType.ToLowerInvariant() switch
+        return contentType.ToUpperInvariant() switch
         {
-            "image/jpeg" => ".jpg",
-            "image/png" => ".png",
-            "image/gif" => ".gif",
-            "image/webp" => ".webp",
+            "IMAGE/JPEG" => ".jpg",
+            "IMAGE/PNG" => ".png",
+            "IMAGE/GIF" => ".gif",
+            "IMAGE/WEBP" => ".webp",
             _ => string.Empty
         };
     }

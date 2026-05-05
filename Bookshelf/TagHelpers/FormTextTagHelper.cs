@@ -31,13 +31,13 @@ public class FormTextTagHelper : FormTagHelperBase
             return InputType;
         }
 
-        var dataType = For.Metadata.DataTypeName?.ToLowerInvariant();
+        var dataType = For.Metadata.DataTypeName?.ToUpperInvariant();
         return dataType switch
         {
-            "password" => "password",
-            "emailaddress" => "email",
-            "url" => "url",
-            "phonenumber" => "tel",
+            "PASSWORD" => "password",
+            "EMAILADDRESS" => "email",
+            "URL" => "url",
+            "PHONENUMBER" => "tel",
             _ when IsNumericType(For.ModelExplorer.ModelType) => "number",
             _ => "text"
         };

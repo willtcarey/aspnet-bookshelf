@@ -3,9 +3,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Bookshelf.Services;
 
-public class OrphanedUploadCleanupJob
+public partial class OrphanedUploadCleanupJob
 {
     private static readonly TimeSpan DefaultGracePeriod = TimeSpan.FromHours(1);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Upload cleanup skipped because {UploadRootPath} does not exist.")]
+    private partial void LogCleanupSkipped(string uploadRootPath);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Upload cleanup completed. Scanned {ScannedCount} files, skipped {SkippedRecentCount} recent files, deleted {DeletedCount} orphaned uploads.")]
+    private partial void LogCleanupCompleted(int scannedCount, int skippedRecentCount, int deletedCount);
 
     private readonly ApplicationDbContext _dbContext;
     private readonly IFileStorage _fileStorage;
@@ -31,7 +37,7 @@ public class OrphanedUploadCleanupJob
     {
         if (!Directory.Exists(_paths.UploadRootPath))
         {
-            _logger.LogInformation("Upload cleanup skipped because {UploadRootPath} does not exist.", _paths.UploadRootPath);
+            LogCleanupSkipped(_paths.UploadRootPath);
             return new OrphanedUploadCleanupResult(0, 0, 0);
         }
 
@@ -74,11 +80,7 @@ public class OrphanedUploadCleanupJob
             deletedCount++;
         }
 
-        _logger.LogInformation(
-            "Upload cleanup completed. Scanned {ScannedCount} files, skipped {SkippedRecentCount} recent files, deleted {DeletedCount} orphaned uploads.",
-            scannedCount,
-            skippedRecentCount,
-            deletedCount);
+        LogCleanupCompleted(scannedCount, skippedRecentCount, deletedCount);
 
         return new OrphanedUploadCleanupResult(scannedCount, skippedRecentCount, deletedCount);
     }

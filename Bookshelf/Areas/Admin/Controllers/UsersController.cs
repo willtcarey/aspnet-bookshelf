@@ -25,14 +25,14 @@ public class UsersController : AdminController
     {
         IQueryable<IdentityUser> query = _userManager.Users;
 
-        query = (sort?.ToLowerInvariant(), dir?.ToLowerInvariant()) switch
+        query = (sort?.ToUpperInvariant(), dir?.ToUpperInvariant()) switch
         {
-            ("email", "desc") => query.OrderByDescending(u => u.Email),
-            ("email", _) => query.OrderBy(u => u.Email),
+            ("EMAIL", "DESC") => query.OrderByDescending(u => u.Email),
+            ("EMAIL", _) => query.OrderBy(u => u.Email),
             _ => query.OrderBy(u => u.Email)
         };
 
-        var paginatedUsers = await PaginatedList<IdentityUser>.CreateAsync(query, page, PageSize, sort, dir);
+        var paginatedUsers = await PaginatedList.CreateAsync(query, page, PageSize, sort, dir);
 
         var viewModels = new List<AdminUserViewModel>();
         foreach (var user in paginatedUsers)

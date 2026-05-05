@@ -16,10 +16,10 @@ public class BooksController : AdminCrudController<Book, AdminBookFormViewModel>
         Context.Books.Include(b => b.Author).ThenInclude(a => a.User);
     protected override Dictionary<string, Expression<Func<Book, object?>>> SortMap => new()
     {
-        ["title"] = b => b.Title,
-        ["author"] = b => b.Author.Name,
-        ["owner"] = b => b.Author.User.Email!,
-        ["year"] = b => (object?)b.Year
+        ["TITLE"] = b => b.Title,
+        ["AUTHOR"] = b => b.Author.Name,
+        ["OWNER"] = b => b.Author.User.Email!,
+        ["YEAR"] = b => (object?)b.Year
     };
     protected override Expression<Func<Book, object?>> DefaultSort => b => b.Title;
 

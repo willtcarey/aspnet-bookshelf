@@ -51,11 +51,11 @@ public class ImageSharpImageProcessor : IImageProcessor
 
     private static string NormalizeFormat(string? format)
     {
-        return format?.Trim().ToLowerInvariant() switch
+        return format?.Trim().ToUpperInvariant() switch
         {
-            "jpeg" => "jpg",
-            "jpg" => "jpg",
-            "png" => "png",
+            "JPEG" => "jpg",
+            "JPG" => "jpg",
+            "PNG" => "png",
             _ => "webp"
         };
     }

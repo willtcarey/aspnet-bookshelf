@@ -23,8 +23,8 @@ public class AuthorsController : AdminCrudController<Author, AdminAuthorFormView
         Context.Authors.Include(a => a.Books).Include(a => a.User);
     protected override Dictionary<string, Expression<Func<Author, object?>>> SortMap => new()
     {
-        ["name"] = a => a.Name,
-        ["owner"] = a => a.User.Email!
+        ["NAME"] = a => a.Name,
+        ["OWNER"] = a => a.User.Email!
     };
     protected override Expression<Func<Author, object?>> DefaultSort => a => a.Name;
 

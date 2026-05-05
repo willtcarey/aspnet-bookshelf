@@ -34,7 +34,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     {
         var query = GetBaseQuery();
         query = ApplySort(query, sort, dir);
-        var paginatedList = await PaginatedList<TEntity>.CreateAsync(query, page, PageSize, sort, dir);
+        var paginatedList = await PaginatedList.CreateAsync(query, page, PageSize, sort, dir);
         return View(paginatedList);
     }
 
@@ -140,7 +140,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     private IQueryable<TEntity> ApplySort(IQueryable<TEntity> query, string? sort, string? dir)
     {
         var descending = string.Equals(dir, "desc", StringComparison.OrdinalIgnoreCase);
-        var sortKey = sort?.ToLowerInvariant();
+        var sortKey = sort?.ToUpperInvariant();
 
         if (sortKey != null && SortMap.TryGetValue(sortKey, out var sortExpression))
         {
