@@ -68,14 +68,9 @@ public class UsersController : AdminController
             return NotFound();
         }
 
-        if (await _userManager.IsInRoleAsync(user, RoleNames.Admin))
-        {
-            await _userManager.RemoveFromRoleAsync(user, RoleNames.Admin);
-        }
-        else
-        {
-            await _userManager.AddToRoleAsync(user, RoleNames.Admin);
-        }
+        _ = await (await _userManager.IsInRoleAsync(user, RoleNames.Admin)
+            ? _userManager.RemoveFromRoleAsync(user, RoleNames.Admin)
+            : _userManager.AddToRoleAsync(user, RoleNames.Admin));
 
         return RedirectToAction(nameof(Index));
     }

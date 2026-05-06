@@ -88,12 +88,9 @@ public partial class OrphanedUploadCleanupJob
     private TimeSpan ResolveGracePeriod()
     {
         var configuredMinutes = _configuration.GetValue<int?>("FileStorage:CleanupGracePeriodMinutes");
-        if (configuredMinutes is > 0)
-        {
-            return TimeSpan.FromMinutes(configuredMinutes.Value);
-        }
-
-        return DefaultGracePeriod;
+        return configuredMinutes is > 0
+            ? TimeSpan.FromMinutes(configuredMinutes.Value)
+            : DefaultGracePeriod;
     }
 }
 

@@ -55,8 +55,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
         if (ModelState.IsValid)
         {
             var entity = CreateEntity(viewModel);
-            DbSet.Add(entity);
-            await Context.SaveChangesAsync();
+            _ = DbSet.Add(entity);
+            _ = await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -96,7 +96,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
 
             try
             {
-                await Context.SaveChangesAsync();
+                _ = await Context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -118,9 +118,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
         if (id == null) return NotFound();
 
         var entity = await GetBaseQuery().FirstOrDefaultAsync(e => e.Id == id);
-        if (entity == null) return NotFound();
-
-        return View(entity);
+        return entity == null ? NotFound() : View(entity);
     }
 
     // POST: Admin/{Resource}/Delete/5
@@ -131,8 +129,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
         var entity = await DbSet.FindAsync(id);
         if (entity != null)
         {
-            DbSet.Remove(entity);
-            await Context.SaveChangesAsync();
+            _ = DbSet.Remove(entity);
+            _ = await Context.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
     }
@@ -142,13 +140,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
         var descending = string.Equals(dir, "desc", StringComparison.OrdinalIgnoreCase);
         var sortKey = sort?.ToUpperInvariant();
 
-        if (sortKey != null && SortMap.TryGetValue(sortKey, out var sortExpression))
-        {
-            return descending
-                ? query.OrderByDescending(sortExpression)
-                : query.OrderBy(sortExpression);
-        }
-
-        return query.OrderBy(DefaultSort);
+        return sortKey != null && SortMap.TryGetValue(sortKey, out var sortExpression)
+            ? (descending ? query.OrderByDescending(sortExpression) : query.OrderBy(sortExpression))
+            : query.OrderBy(DefaultSort);
     }
 }

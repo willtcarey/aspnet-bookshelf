@@ -25,7 +25,7 @@ public class PaginatedList<T> : List<T>
     public bool HasPreviousPage => PageIndex > 1;
     public bool HasNextPage => PageIndex < TotalPages;
 
-    public PaginatedList(List<T> items, int count, int pageIndex, int pageSize, string? sortColumn, string? sortDirection)
+    public PaginatedList(IList<T> items, int count, int pageIndex, int pageSize, string? sortColumn, string? sortDirection)
     {
         PageIndex = pageIndex;
         TotalPages = (int)Math.Ceiling(count / (double)pageSize);

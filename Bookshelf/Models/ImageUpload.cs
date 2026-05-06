@@ -92,23 +92,17 @@ public class ImageUpload
         }
 
         var imageFormat = ResolveFormat(format);
-        if (imageFormat is null)
-        {
-            return new ImageErrorResult("Unsupported image format.");
-        }
-
-        return await GetResizedAsync(normalizedPath, width, height, imageFormat);
+        return imageFormat is null
+            ? new ImageErrorResult("Unsupported image format.")
+            : await GetResizedAsync(normalizedPath, width, height, imageFormat);
     }
 
     private async Task<ImageResult> GetOriginalAsync(string sourcePath)
     {
         var stream = await _fileStorage.GetAsync(sourcePath);
-        if (stream is null)
-        {
-            return new ImageNotFoundResult();
-        }
-
-        return new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
+        return stream is null
+            ? new ImageNotFoundResult()
+            : new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
     }
 
     private async Task<ImageResult> GetResizedAsync(
@@ -129,7 +123,7 @@ public class ImageUpload
             return new ImageNotFoundResult();
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
 
         var resizeWidth = width ?? MaxResizeDimension;
         var resizeHeight = height ?? MaxResizeDimension;
@@ -171,14 +165,9 @@ public class ImageUpload
 
     private static ImageFormat? ResolveFormat(string? format)
     {
-        if (string.IsNullOrWhiteSpace(format))
-        {
-            return WebpFormat;
-        }
-
-        return Formats.TryGetValue(format.Trim(), out var imageFormat)
-            ? imageFormat
-            : null;
+        return string.IsNullOrWhiteSpace(format)
+            ? WebpFormat
+            : (Formats.TryGetValue(format.Trim(), out var imageFormat) ? imageFormat : null);
     }
 
     private static string GetContentTypeFromPath(string path)

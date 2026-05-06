@@ -47,24 +47,30 @@ public class AuthorRepository
     }
 
     /// <summary>
-    /// Creates a new Author from the submitted view model. The new author is
-    /// automatically scoped to the current user. Any validation errors are
-    /// written directly to <paramref name="modelState"/>.
+    /// Validates and creates a new Author from the submitted view model. The
+    /// new author is automatically scoped to the current user. Any validation
+    /// errors are written directly to <paramref name="modelState"/>.
     /// </summary>
     public async Task<RepositoryResult> CreateAsync(AuthorFormViewModel viewModel, ModelStateDictionary modelState)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(modelState);
+
+        if (!await ValidateAsync(viewModel, modelState, currentId: null))
+        {
+            return RepositoryResult.ValidationFailed;
+        }
 
         var author = new Author { UserId = _userId };
         ApplyFormData(author, viewModel);
-        _context.Authors.Add(author);
-        await _context.SaveChangesAsync();
+        _ = _context.Authors.Add(author);
+        _ = await _context.SaveChangesAsync();
         return RepositoryResult.Success;
     }
 
     /// <summary>
-    /// Updates the Author identified by <paramref name="id"/> from the
-    /// submitted view model. Returns NotFound if the author doesn't exist or
+    /// Validates and updates the Author identified by <paramref name="id"/> from
+    /// the submitted view model. Returns NotFound if the author doesn't exist or
     /// isn't owned by the current user (including the case where another
     /// request deleted it between load and save). Any validation errors are
     /// written directly to <paramref name="modelState"/>.
@@ -72,6 +78,7 @@ public class AuthorRepository
     public async Task<RepositoryResult> UpdateAsync(int id, AuthorFormViewModel viewModel, ModelStateDictionary modelState)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(modelState);
 
         var author = await FindAsync(id);
         if (author == null)
@@ -79,11 +86,16 @@ public class AuthorRepository
             return RepositoryResult.NotFound;
         }
 
+        if (!await ValidateAsync(viewModel, modelState, currentId: id))
+        {
+            return RepositoryResult.ValidationFailed;
+        }
+
         ApplyFormData(author, viewModel);
 
         try
         {
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -96,7 +108,7 @@ public class AuthorRepository
 
     public void Remove(Author author)
     {
-        _context.Authors.Remove(author);
+        _ = _context.Authors.Remove(author);
     }
 
     public Task SaveAsync()
@@ -108,6 +120,23 @@ public class AuthorRepository
     {
         return _context.Authors
             .AnyAsync(a => a.Id == id && a.UserId == _userId);
+    }
+
+    private async Task<bool> ValidateAsync(AuthorFormViewModel viewModel, ModelStateDictionary modelState, int? currentId)
+    {
+        if (await NameExistsForUserAsync(viewModel.Name, currentId))
+        {
+            modelState.AddModelError(nameof(viewModel.Name), "You already have an author with this name.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private Task<bool> NameExistsForUserAsync(string name, int? excludingId)
+    {
+        return _context.Authors
+            .AnyAsync(a => a.UserId == _userId && a.Name == name && (excludingId == null || a.Id != excludingId));
     }
 
     private static void ApplyFormData(Author author, AuthorFormViewModel viewModel)

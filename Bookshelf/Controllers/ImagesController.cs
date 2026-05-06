@@ -22,12 +22,9 @@ public class ImagesController : Controller
     {
         var result = await _imageUpload.SaveAsync(file);
 
-        if (result.IsSuccess)
-        {
-            return Ok(new { path = result.Path });
-        }
-
-        return BadRequest(new { error = result.Error });
+        return result.IsSuccess
+            ? Ok(new { path = result.Path })
+            : BadRequest(new { error = result.Error });
     }
 
     [HttpGet("{*path}")]

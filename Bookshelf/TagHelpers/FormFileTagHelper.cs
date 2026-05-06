@@ -47,33 +47,33 @@ public class FormFileTagHelper : FormTagHelperBase
         var labelTag = Generator.GenerateLabel(
             ViewContext, For.ModelExplorer, For.Name, Label,
             new { @class = LabelClasses });
-        output.Content.AppendHtml(labelTag);
+        _ = output.Content.AppendHtml(labelTag);
 
         // Preview area — server-renders the current image when one exists;
         // replaced by JavaScript after a successful upload.
-        output.Content.AppendHtml(BuildPreviewContainer(existingPath));
+        _ = output.Content.AppendHtml(BuildPreviewContainer(existingPath));
 
         // File input — used for selection only, not model-bound.
-        output.Content.AppendHtml(BuildFileInput());
+        _ = output.Content.AppendHtml(BuildFileInput());
 
         // Hidden input — model-bound, carries the storage path on submit.
-        output.Content.AppendHtml(BuildHiddenInput(existingPath));
+        _ = output.Content.AppendHtml(BuildHiddenInput(existingPath));
 
         // Hint
         if (!string.IsNullOrWhiteSpace(Hint))
         {
-            output.Content.AppendHtml(BuildHint(hasExistingImage));
+            _ = output.Content.AppendHtml(BuildHint(hasExistingImage));
         }
 
         // Error (initially hidden, shown by JS on upload failure)
-        output.Content.AppendHtml(BuildErrorLabel());
+        _ = output.Content.AppendHtml(BuildErrorLabel());
 
         // Server-side validation
         var validationTag = Generator.GenerateValidationMessage(
             ViewContext, For.ModelExplorer, For.Name, null,
             ViewContext.ValidationMessageElement,
             new { @class = ValidationClasses });
-        output.Content.AppendHtml(validationTag);
+        _ = output.Content.AppendHtml(validationTag);
     }
 
     private static TagBuilder BuildPreviewContainer(string? existingPath)
@@ -101,18 +101,18 @@ public class FormFileTagHelper : FormTagHelperBase
 
         var title = new TagBuilder("div");
         title.AddCssClass("font-semibold text-base-content");
-        title.InnerHtml.Append("Current image");
+        _ = title.InnerHtml.Append("Current image");
 
         var subtitle = new TagBuilder("div");
-        subtitle.InnerHtml.Append("Select a new file to replace it.");
+        _ = subtitle.InnerHtml.Append("Select a new file to replace it.");
 
-        textBlock.InnerHtml.AppendHtml(title);
-        textBlock.InnerHtml.AppendHtml(subtitle);
+        _ = textBlock.InnerHtml.AppendHtml(title);
+        _ = textBlock.InnerHtml.AppendHtml(subtitle);
 
-        card.InnerHtml.AppendHtml(img);
-        card.InnerHtml.AppendHtml(textBlock);
+        _ = card.InnerHtml.AppendHtml(img);
+        _ = card.InnerHtml.AppendHtml(textBlock);
 
-        container.InnerHtml.AppendHtml(card);
+        _ = container.InnerHtml.AppendHtml(card);
         return container;
     }
 
@@ -153,7 +153,7 @@ public class FormFileTagHelper : FormTagHelperBase
             hint.AddCssClass("hidden");
         }
 
-        hint.InnerHtml.Append(Hint!);
+        _ = hint.InnerHtml.Append(Hint!);
         return hint;
     }
 

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Bookshelf.Services;
 
 public class UploadStoragePaths
@@ -23,7 +25,7 @@ public class UploadStoragePaths
         UploadRootPath = Path.Combine(webRootPath, UploadsPath.Replace('/', Path.DirectorySeparatorChar));
         CacheRootPath = Path.Combine(UploadRootPath, ".cache");
 
-        Directory.CreateDirectory(UploadRootPath);
+        _ = Directory.CreateDirectory(UploadRootPath);
     }
 
     public string? NormalizeStoredPath(string? path)
@@ -37,7 +39,7 @@ public class UploadStoragePaths
             .Replace('\\', '/')
             .Trim();
 
-        if (normalizedPath.Contains('\0'))
+        if (normalizedPath.Contains('\0', StringComparison.Ordinal))
         {
             return null;
         }
@@ -50,14 +52,11 @@ public class UploadStoragePaths
         }
 
         var fileName = normalizedPath[prefix.Length..];
-        if (string.IsNullOrWhiteSpace(fileName)
+        return string.IsNullOrWhiteSpace(fileName)
             || fileName is "." or ".."
-            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return $"/{UploadsPath}/{fileName}";
+            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal)
+            ? null
+            : $"/{UploadsPath}/{fileName}";
     }
 
     public string ResolveUploadAbsolutePath(string path)
@@ -70,7 +69,7 @@ public class UploadStoragePaths
 
     public string BuildCachePath(string normalizedPath, int? width, int? height, string extension)
     {
-        var variantFolder = $"{width?.ToString() ?? "auto"}x{height?.ToString() ?? "auto"}";
+        var variantFolder = $"{width?.ToString(CultureInfo.InvariantCulture) ?? "auto"}x{height?.ToString(CultureInfo.InvariantCulture) ?? "auto"}";
         var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
 
         return Path.Combine(CacheRootPath, variantFolder, $"{fileName}{extension}");

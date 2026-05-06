@@ -30,9 +30,7 @@ public class AuthorsController : Controller
         if (id == null) return NotFound();
 
         var author = await _authors.FindWithBooksAsync(id.Value);
-        if (author == null) return NotFound();
-
-        return View(author);
+        return author == null ? NotFound() : View(author);
     }
 
     // GET: Authors/Create
@@ -99,9 +97,7 @@ public class AuthorsController : Controller
         if (id == null) return NotFound();
 
         var author = await _authors.FindWithBooksAsync(id.Value);
-        if (author == null) return NotFound();
-
-        return View(author);
+        return author == null ? NotFound() : View(author);
     }
 
     // POST: Authors/Delete/5
