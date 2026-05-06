@@ -57,7 +57,7 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     if (!await roleManager.RoleExistsAsync(RoleNames.Admin))
     {
-        await roleManager.CreateAsync(new IdentityRole(RoleNames.Admin));
+        _ = await roleManager.CreateAsync(new IdentityRole(RoleNames.Admin));
     }
 }
 
@@ -72,7 +72,7 @@ recurringJobManager.AddOrUpdate<OrphanedUploadCleanupJob>(
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    _ = app.UseExceptionHandler("/Home/Error");
 }
 app.UseHttpLogging();
 app.UseStaticFiles();

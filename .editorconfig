@@ -69,7 +69,7 @@ csharp_preferred_modifier_order = public,private,protected,internal,file,static,
 
 # Unnecessary code
 dotnet_code_quality_unused_parameters = all:warning
-csharp_style_unused_value_expression_statement_preference = discard_variable:none
+csharp_style_unused_value_expression_statement_preference = discard_variable:warning
 csharp_style_unused_value_assignment_preference = discard_variable:warning
 
 #### Formatting rules ####
@@ -230,10 +230,8 @@ dotnet_diagnostic.CA1000.severity = warning
 # https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3003#when-to-suppress-warnings
 dotnet_diagnostic.CA3003.severity = none
 
-# IDE0058: Expression value is never used – disabled; the `_ =` discards it
-# requires on fluent APIs (TagBuilder.AppendHtml, EF DbSet.Add, etc.) make code
-# noisier without catching real bugs.
-dotnet_diagnostic.IDE0058.severity = none
+# IDE0058: Expression value is never used – can flag real mistakes
+dotnet_diagnostic.IDE0058.severity = warning
 
 # IDE0005: Using directive is unnecessary – let the formatter handle this
 dotnet_diagnostic.IDE0005.severity = warning

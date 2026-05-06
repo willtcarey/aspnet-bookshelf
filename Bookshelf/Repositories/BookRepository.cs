@@ -68,8 +68,8 @@ public class BookRepository
 
         var book = new Book();
         ApplyFormData(book, viewModel);
-        _context.Books.Add(book);
-        await _context.SaveChangesAsync();
+        _ = _context.Books.Add(book);
+        _ = await _context.SaveChangesAsync();
         return RepositoryResult.Success;
     }
 
@@ -96,13 +96,13 @@ public class BookRepository
         }
 
         ApplyFormData(book, viewModel);
-        await _context.SaveChangesAsync();
+        _ = await _context.SaveChangesAsync();
         return RepositoryResult.Success;
     }
 
     public void Remove(Book book)
     {
-        _context.Books.Remove(book);
+        _ = _context.Books.Remove(book);
     }
 
     public async Task<SelectList> BuildAuthorsSelectListAsync(int? selectedAuthorId = null)

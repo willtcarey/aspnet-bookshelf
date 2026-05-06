@@ -63,8 +63,8 @@ public class AuthorRepository
 
         var author = new Author { UserId = _userId };
         ApplyFormData(author, viewModel);
-        _context.Authors.Add(author);
-        await _context.SaveChangesAsync();
+        _ = _context.Authors.Add(author);
+        _ = await _context.SaveChangesAsync();
         return RepositoryResult.Success;
     }
 
@@ -95,7 +95,7 @@ public class AuthorRepository
 
         try
         {
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -108,7 +108,7 @@ public class AuthorRepository
 
     public void Remove(Author author)
     {
-        _context.Authors.Remove(author);
+        _ = _context.Authors.Remove(author);
     }
 
     public Task SaveAsync()

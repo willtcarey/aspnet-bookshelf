@@ -35,7 +35,7 @@ public class FormSelectTagHelper : FormTagHelperBase
                 placeholderOption.Attributes["selected"] = "selected";
             }
 
-            placeholderOption.InnerHtml.Append(Placeholder);
+            _ = placeholderOption.InnerHtml.Append(Placeholder);
             selectTag.InnerHtml.Prepend(placeholderOption);
         }
 

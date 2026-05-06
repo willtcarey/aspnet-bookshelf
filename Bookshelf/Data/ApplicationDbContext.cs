@@ -36,15 +36,15 @@ public class ApplicationDbContext : IdentityDbContext
         // their Author (Author -> User), so Books don't need their own UserId.
         // The existing Author -> Book cascade on FK_Books_Authors_AuthorId means
         // deleting a user cascades: User -> Authors -> Books.
-        builder.Entity<Author>(entity =>
+        _ = builder.Entity<Author>(entity =>
         {
-            entity.HasOne(a => a.User)
+            _ = entity.HasOne(a => a.User)
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasIndex(a => a.UserId);
+            _ = entity.HasIndex(a => a.UserId);
         });
     }
 

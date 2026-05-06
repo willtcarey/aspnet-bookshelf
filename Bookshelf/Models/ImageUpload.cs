@@ -45,9 +45,10 @@ public class ImageUpload
         _paths = paths;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Parameter is intentionally nullable; null is handled gracefully.")]
     public async Task<UploadResult> SaveAsync(IFormFile? file)
     {
-        if (file == null || file.Length == 0)
+        if (file is not { Length: > 0 })
         {
             return UploadResult.Failure("No file provided.");
         }
@@ -122,7 +123,7 @@ public class ImageUpload
             return new ImageNotFoundResult();
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
 
         var resizeWidth = width ?? MaxResizeDimension;
         var resizeHeight = height ?? MaxResizeDimension;

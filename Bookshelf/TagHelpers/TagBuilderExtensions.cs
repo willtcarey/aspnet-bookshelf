@@ -11,7 +11,7 @@ internal static class TagBuilderExtensions
         // by capturing existing content, clearing, adding the new item, then re-adding
         var existingContent = new HtmlContentBuilder();
         builder.MoveTo(existingContent);
-        builder.AppendHtml(tag);
+        _ = builder.AppendHtml(tag);
         existingContent.MoveTo(builder);
     }
 }

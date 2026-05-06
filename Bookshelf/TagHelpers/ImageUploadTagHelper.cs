@@ -73,8 +73,8 @@ public class ImageUploadTagHelper : TagHelper
 
         if (queryParameters.Count > 0)
         {
-            url.Append('?');
-            url.Append(string.Join('&', queryParameters));
+            _ = url.Append('?');
+            _ = url.Append(string.Join('&', queryParameters));
         }
 
         return url.ToString();
