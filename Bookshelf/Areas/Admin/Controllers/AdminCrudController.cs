@@ -55,8 +55,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
         if (ModelState.IsValid)
         {
             var entity = CreateEntity(viewModel);
-            _ = DbSet.Add(entity);
-            _ = await Context.SaveChangesAsync();
+            DbSet.Add(entity);
+            await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -96,7 +96,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
 
             try
             {
-                _ = await Context.SaveChangesAsync();
+                await Context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -129,8 +129,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
         var entity = await DbSet.FindAsync(id);
         if (entity != null)
         {
-            _ = DbSet.Remove(entity);
-            _ = await Context.SaveChangesAsync();
+            DbSet.Remove(entity);
+            await Context.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
     }

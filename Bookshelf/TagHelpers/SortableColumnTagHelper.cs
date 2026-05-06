@@ -65,7 +65,7 @@ public class SortableColumnTagHelper : TagHelper
         var childContent = output.GetChildContentAsync().Result;
         var label = childContent.IsEmptyOrWhiteSpace ? Name : childContent.GetContent();
 
-        _ = output.Content.SetHtmlContent(
+        output.Content.SetHtmlContent(
             $"<a href=\"{url}\" class=\"link link-hover inline-flex items-center gap-1\">{label}{arrow}</a>");
     }
 }
