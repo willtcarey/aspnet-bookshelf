@@ -30,10 +30,10 @@ public class FormCheckboxTagHelper : FormTagHelperBase
 
         var row = new TagBuilder("div");
         row.AddCssClass("flex items-center gap-3");
-        _ = row.InnerHtml.AppendHtml(inputTag);
-        _ = row.InnerHtml.AppendHtml(labelTag);
+        row.InnerHtml.AppendHtml(inputTag);
+        row.InnerHtml.AppendHtml(labelTag);
 
-        _ = output.Content.AppendHtml(row);
-        _ = output.Content.AppendHtml(validationTag);
+        output.Content.AppendHtml(row);
+        output.Content.AppendHtml(validationTag);
     }
 }

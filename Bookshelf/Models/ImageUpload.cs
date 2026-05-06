@@ -123,7 +123,7 @@ public class ImageUpload
             return new ImageNotFoundResult();
         }
 
-        _ = Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
 
         var resizeWidth = width ?? MaxResizeDimension;
         var resizeHeight = height ?? MaxResizeDimension;

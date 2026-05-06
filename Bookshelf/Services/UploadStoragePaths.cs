@@ -25,7 +25,7 @@ public class UploadStoragePaths
         UploadRootPath = Path.Combine(webRootPath, UploadsPath.Replace('/', Path.DirectorySeparatorChar));
         CacheRootPath = Path.Combine(UploadRootPath, ".cache");
 
-        _ = Directory.CreateDirectory(UploadRootPath);
+        Directory.CreateDirectory(UploadRootPath);
     }
 
     public string? NormalizeStoredPath(string? path)

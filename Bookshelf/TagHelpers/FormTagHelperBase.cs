@@ -59,8 +59,8 @@ public abstract class FormTagHelperBase : TagHelper
     {
         ArgumentNullException.ThrowIfNull(output);
 
-        _ = output.Content.AppendHtml(labelTag);
-        _ = output.Content.AppendHtml(inputTag);
-        _ = output.Content.AppendHtml(validationTag);
+        output.Content.AppendHtml(labelTag);
+        output.Content.AppendHtml(inputTag);
+        output.Content.AppendHtml(validationTag);
     }
 }
