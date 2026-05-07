@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bookshelf.Extensions;
 using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
@@ -54,8 +55,9 @@ public class BooksController : Controller
 
         if (ModelState.IsValid)
         {
-            var result = await _books.CreateAsync(viewModel, ModelState);
-            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            var result = await _books.CreateAsync(viewModel);
+            ModelState.AddRepositoryErrors(result);
+            if (result.Succeeded) return RedirectToAction(nameof(Index));
         }
 
         viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
@@ -96,9 +98,10 @@ public class BooksController : Controller
 
         if (ModelState.IsValid)
         {
-            var result = await _books.UpdateAsync(id, viewModel, ModelState);
-            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
-            if (result == RepositoryResult.NotFound) return NotFound();
+            var result = await _books.UpdateAsync(id, viewModel);
+            ModelState.AddRepositoryErrors(result);
+            if (result.Succeeded) return RedirectToAction(nameof(Index));
+            if (result.IsNotFound) return NotFound();
         }
 
         viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);

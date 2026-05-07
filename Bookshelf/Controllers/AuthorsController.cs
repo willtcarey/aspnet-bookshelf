@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bookshelf.Extensions;
 using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
@@ -45,10 +46,13 @@ public class AuthorsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (ModelState.IsValid)
         {
-            var result = await _authors.CreateAsync(viewModel, ModelState);
-            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            var result = await _authors.CreateAsync(viewModel);
+            ModelState.AddRepositoryErrors(result);
+            if (result.Succeeded) return RedirectToAction(nameof(Index));
         }
 
         return View(viewModel);
@@ -82,9 +86,10 @@ public class AuthorsController : Controller
 
         if (ModelState.IsValid)
         {
-            var result = await _authors.UpdateAsync(id, viewModel, ModelState);
-            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
-            if (result == RepositoryResult.NotFound) return NotFound();
+            var result = await _authors.UpdateAsync(id, viewModel);
+            ModelState.AddRepositoryErrors(result);
+            if (result.Succeeded) return RedirectToAction(nameof(Index));
+            if (result.IsNotFound) return NotFound();
         }
 
         return View(viewModel);

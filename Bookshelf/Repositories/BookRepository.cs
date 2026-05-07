@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
@@ -53,17 +52,16 @@ public class BookRepository
     /// <summary>
     /// Validates and creates a new Book from the submitted view model.
     /// Ownership of the selected AuthorId is enforced here so a tampered
-    /// POST submitting another user's author id is rejected. Any validation
-    /// errors are written directly to <paramref name="modelState"/>.
+    /// POST submitting another user's author id is rejected.
     /// </summary>
-    public async Task<RepositoryResult> CreateAsync(BookFormViewModel viewModel, ModelStateDictionary modelState)
+    public async Task<RepositoryResult> CreateAsync(BookFormViewModel viewModel)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
-        ArgumentNullException.ThrowIfNull(modelState);
 
-        if (!await ValidateAsync(viewModel, modelState))
+        var validationResult = await ValidateAsync(viewModel);
+        if (!validationResult.Succeeded)
         {
-            return RepositoryResult.ValidationFailed;
+            return validationResult;
         }
 
         var book = new Book();
@@ -76,13 +74,11 @@ public class BookRepository
     /// <summary>
     /// Validates and updates the Book identified by <paramref name="id"/> from
     /// the submitted view model. Returns NotFound if the book doesn't exist or
-    /// isn't owned by the current user. Any validation errors are written
-    /// directly to <paramref name="modelState"/>.
+    /// isn't owned by the current user.
     /// </summary>
-    public async Task<RepositoryResult> UpdateAsync(int id, BookFormViewModel viewModel, ModelStateDictionary modelState)
+    public async Task<RepositoryResult> UpdateAsync(int id, BookFormViewModel viewModel)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
-        ArgumentNullException.ThrowIfNull(modelState);
 
         var book = await FindAsync(id);
         if (book == null)
@@ -90,9 +86,10 @@ public class BookRepository
             return RepositoryResult.NotFound;
         }
 
-        if (!await ValidateAsync(viewModel, modelState))
+        var validationResult = await ValidateAsync(viewModel);
+        if (!validationResult.Succeeded)
         {
-            return RepositoryResult.ValidationFailed;
+            return validationResult;
         }
 
         ApplyFormData(book, viewModel);
@@ -120,15 +117,13 @@ public class BookRepository
         return _context.SaveChangesAsync();
     }
 
-    private async Task<bool> ValidateAsync(BookFormViewModel viewModel, ModelStateDictionary modelState)
+    private async Task<RepositoryResult> ValidateAsync(BookFormViewModel viewModel)
     {
-        if (!await IsOwnedAuthorAsync(viewModel.AuthorId))
-        {
-            modelState.AddModelError(nameof(viewModel.AuthorId), "Invalid author selection.");
-            return false;
-        }
-
-        return true;
+        return await IsOwnedAuthorAsync(viewModel.AuthorId)
+            ? RepositoryResult.Success
+            : RepositoryResult.ValidationFailed(
+                nameof(viewModel.AuthorId),
+                "Invalid author selection.");
     }
 
     private Task<bool> IsOwnedAuthorAsync(int authorId)
