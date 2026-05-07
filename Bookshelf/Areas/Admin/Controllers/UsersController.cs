@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Bookshelf.Helpers;
 using Bookshelf.Areas.Admin.ViewModels;
 using Bookshelf.Security;
@@ -21,18 +20,19 @@ public class UsersController : AdminController
     }
 
     // GET: Admin/Users
+    [HttpGet]
     public async Task<IActionResult> Index(int page = 1, string? sort = null, string? dir = null)
     {
         IQueryable<IdentityUser> query = _userManager.Users;
 
-        query = (sort?.ToLowerInvariant(), dir?.ToLowerInvariant()) switch
+        query = (sort?.ToUpperInvariant(), dir?.ToUpperInvariant()) switch
         {
-            ("email", "desc") => query.OrderByDescending(u => u.Email),
-            ("email", _) => query.OrderBy(u => u.Email),
+            ("EMAIL", "DESC") => query.OrderByDescending(u => u.Email),
+            ("EMAIL", _) => query.OrderBy(u => u.Email),
             _ => query.OrderBy(u => u.Email)
         };
 
-        var paginatedUsers = await PaginatedList<IdentityUser>.CreateAsync(query, page, PageSize, sort, dir);
+        var paginatedUsers = await PaginatedList.CreateAsync(query, page, PageSize, sort, dir);
 
         var viewModels = new List<AdminUserViewModel>();
         foreach (var user in paginatedUsers)

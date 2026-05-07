@@ -8,7 +8,7 @@ public class Author : IEntity
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
 
-    public List<Book> Books { get; set; } = new();
+    public ICollection<Book> Books { get; } = [];
 
     // Owner of this author. Authors are NOT shared between users -- if two users
     // want "Ursula K. Le Guin", they each create their own row. Set server-side

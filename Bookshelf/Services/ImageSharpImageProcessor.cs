@@ -13,15 +13,8 @@ public class ImageSharpImageProcessor : IImageProcessor
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        if (width <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(width));
-        }
-
-        if (height <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(height));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
 
         if (source.CanSeek)
         {
@@ -58,11 +51,11 @@ public class ImageSharpImageProcessor : IImageProcessor
 
     private static string NormalizeFormat(string? format)
     {
-        return format?.Trim().ToLowerInvariant() switch
+        return format?.Trim().ToUpperInvariant() switch
         {
-            "jpeg" => "jpg",
-            "jpg" => "jpg",
-            "png" => "png",
+            "JPEG" => "jpg",
+            "JPG" => "jpg",
+            "PNG" => "png",
             _ => "webp"
         };
     }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bookshelf.Extensions;
 using Bookshelf.Repositories;
 using Bookshelf.ViewModels;
 
@@ -16,6 +17,7 @@ public class BooksController : Controller
     }
 
     // GET: Books
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         var books = await _books.ListAsync();
@@ -23,17 +25,17 @@ public class BooksController : Controller
     }
 
     // GET: Books/Details/5
+    [HttpGet]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
         var book = await _books.FindWithAuthorAsync(id.Value);
-        if (book == null) return NotFound();
-
-        return View(book);
+        return book == null ? NotFound() : View(book);
     }
 
     // GET: Books/Create
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var viewModel = new BookFormViewModel
@@ -49,10 +51,13 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (ModelState.IsValid)
         {
-            var result = await _books.CreateAsync(viewModel, ModelState);
-            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
+            var result = await _books.CreateAsync(viewModel);
+            ModelState.AddRepositoryErrors(result);
+            if (result.Succeeded) return RedirectToAction(nameof(Index));
         }
 
         viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
@@ -60,6 +65,7 @@ public class BooksController : Controller
     }
 
     // GET: Books/Edit/5
+    [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -86,13 +92,16 @@ public class BooksController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, BookFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (id != viewModel.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
-            var result = await _books.UpdateAsync(id, viewModel, ModelState);
-            if (result == RepositoryResult.Success) return RedirectToAction(nameof(Index));
-            if (result == RepositoryResult.NotFound) return NotFound();
+            var result = await _books.UpdateAsync(id, viewModel);
+            ModelState.AddRepositoryErrors(result);
+            if (result.Succeeded) return RedirectToAction(nameof(Index));
+            if (result.IsNotFound) return NotFound();
         }
 
         viewModel.Authors = await _books.BuildAuthorsSelectListAsync(viewModel.AuthorId);
@@ -100,14 +109,13 @@ public class BooksController : Controller
     }
 
     // GET: Books/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
 
         var book = await _books.FindWithAuthorAsync(id.Value);
-        if (book == null) return NotFound();
-
-        return View(book);
+        return book == null ? NotFound() : View(book);
     }
 
     // POST: Books/Delete/5

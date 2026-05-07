@@ -46,6 +46,7 @@ builder.Services.AddScoped<AuthorRepository>();
 builder.Services.AddSingleton<UploadStoragePaths>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddSingleton<IImageProcessor, ImageSharpImageProcessor>();
+builder.Services.AddSingleton<ImageStorage>();
 builder.Services.AddSingleton<ImageUpload>();
 builder.Services.AddSingleton<HangfireDashboardAuthorizationFilter>();
 builder.Services.AddScoped<OrphanedUploadCleanupJob>();
@@ -99,4 +100,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.Run();
+await app.RunAsync();

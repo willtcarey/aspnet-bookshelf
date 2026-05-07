@@ -22,6 +22,8 @@ public class SortableColumnTagHelper : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         output.TagName = "th";
         output.TagMode = TagMode.StartTagAndEndTag;
 
@@ -40,8 +42,8 @@ public class SortableColumnTagHelper : TagHelper
 
         foreach (var param in query)
         {
-            var key = param.Key.ToLowerInvariant();
-            if (key != "sort" && key != "dir")
+            var key = param.Key.ToUpperInvariant();
+            if (key != "SORT" && key != "DIR")
             {
                 foreach (var value in param.Value)
                 {
