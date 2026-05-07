@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bookshelf.Services;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -104,17 +105,35 @@ public class ImageUpload
             : new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Security",
-        "CA3003:Review code for file path injection vulnerabilities",
-        Justification = "Path is validated upstream by UploadStoragePaths.NormalizeStoredPath, which requires the /uploads/ prefix and rejects anything not equal to Path.GetFileName(filename). Width/height are int?, format is whitelisted to jpg/png/webp.")]
     private async Task<ImageResult> GetResizedAsync(
         string normalizedPath,
         int? width,
         int? height,
         ImageFormat format)
     {
-        var cachePath = _paths.BuildCachePath(normalizedPath, width, height, format.Extension);
+        var requestedFileName = Path.GetFileName(normalizedPath);
+        var actualSourcePath = Directory
+            .EnumerateFiles(_paths.UploadRootPath)
+            .FirstOrDefault(f => Path.GetFileName(f) == requestedFileName);
+        if (actualSourcePath is null)
+        {
+            return new ImageNotFoundResult();
+        }
+        var sourceFileNameNoExt = Path.GetFileNameWithoutExtension(actualSourcePath);
+        var variantFolder = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{width ?? 0}x{height ?? 0}");
+        var safeExtension = format.Name switch
+        {
+            "jpg" => ".jpg",
+            "png" => ".png",
+            "webp" => ".webp",
+            _ => throw new InvalidOperationException("Unsupported image format.")
+        };
+        var cachePath = Path.Combine(
+            _paths.CacheRootPath,
+            variantFolder,
+            $"{sourceFileNameNoExt}{safeExtension}");
         if (File.Exists(cachePath))
         {
             return new ImageFileResult(cachePath, format.ContentType);
