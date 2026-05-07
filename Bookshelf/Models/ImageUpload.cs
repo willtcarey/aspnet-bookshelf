@@ -19,12 +19,15 @@ public class ImageUpload
     private const int MaxResizeDimension = 4000;
     private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
     private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+    private static readonly ImageFormat JpgFormat = new("jpg", "image/jpeg");
+    private static readonly ImageFormat PngFormat = new("png", "image/png");
+    private static readonly ImageFormat WebpFormat = new("webp", "image/webp");
     private static readonly Dictionary<string, ImageFormat> Formats = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["jpg"] = ImageFormat.Jpg,
-        ["jpeg"] = ImageFormat.Jpg,
-        ["png"] = ImageFormat.Png,
-        ["webp"] = ImageFormat.Webp
+        ["jpg"] = JpgFormat,
+        ["jpeg"] = JpgFormat,
+        ["png"] = PngFormat,
+        ["webp"] = WebpFormat
     };
 
     private readonly IFileStorage _fileStorage;
@@ -70,8 +73,8 @@ public class ImageUpload
         int? height,
         string format = "webp")
     {
-        var imageKey = ImageUploadKey.Parse(key);
-        if (imageKey is null)
+        var sourcePath = _imageStorage.BuildStoredPath(key);
+        if (sourcePath is null)
         {
             return new ImageNotFoundResult();
         }
@@ -81,7 +84,6 @@ public class ImageUpload
             return new ImageErrorResult($"Width and height must be between 1 and {MaxResizeDimension}.");
         }
 
-        var sourcePath = _imageStorage.BuildStoredPath(imageKey);
         if (!width.HasValue && !height.HasValue)
         {
             return await GetOriginalAsync(sourcePath);
@@ -90,7 +92,7 @@ public class ImageUpload
         var imageFormat = ResolveFormat(format);
         return imageFormat is null
             ? new ImageErrorResult("Unsupported image format.")
-            : await GetResizedAsync(sourcePath, width, height, imageFormat.Value);
+            : await GetResizedAsync(sourcePath, width, height, imageFormat);
     }
 
     public string? BuildUrl(string path, int? width = null, int? height = null, string? format = null)
@@ -122,9 +124,9 @@ public class ImageUpload
         var resizeHeight = height ?? MaxResizeDimension;
 
         var resizedStream = await _imageProcessor.ResizeAsync(
-            sourceStream, resizeWidth, resizeHeight, GetProcessorFormat(format));
+            sourceStream, resizeWidth, resizeHeight, format.Name);
 
-        return new ImageStreamResult(resizedStream, GetContentType(format));
+        return new ImageStreamResult(resizedStream, format.ContentType);
     }
 
     private static bool IsValidDimension(int? value)
@@ -135,30 +137,8 @@ public class ImageUpload
     private static ImageFormat? ResolveFormat(string? format)
     {
         return string.IsNullOrWhiteSpace(format)
-            ? ImageFormat.Webp
+            ? WebpFormat
             : (Formats.TryGetValue(format.Trim(), out var imageFormat) ? imageFormat : null);
-    }
-
-    private static string GetProcessorFormat(ImageFormat format)
-    {
-        return format switch
-        {
-            ImageFormat.Jpg => "jpg",
-            ImageFormat.Png => "png",
-            ImageFormat.Webp => "webp",
-            _ => throw new InvalidOperationException("Unsupported image format.")
-        };
-    }
-
-    private static string GetContentType(ImageFormat format)
-    {
-        return format switch
-        {
-            ImageFormat.Jpg => "image/jpeg",
-            ImageFormat.Png => "image/png",
-            ImageFormat.Webp => "image/webp",
-            _ => throw new InvalidOperationException("Unsupported image format.")
-        };
     }
 
     private static string GetContentTypeFromPath(string path)
@@ -168,10 +148,5 @@ public class ImageUpload
             : "application/octet-stream";
     }
 
-    private enum ImageFormat
-    {
-        Jpg,
-        Png,
-        Webp
-    }
+    private sealed record ImageFormat(string Name, string ContentType);
 }
