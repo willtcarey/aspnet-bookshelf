@@ -224,11 +224,8 @@ dotnet_diagnostic.CA2227.severity = warning
 # CA1000: Do not declare static members on generic types
 dotnet_diagnostic.CA1000.severity = warning
 
-# CA3003: Path injection – analyzer cannot recognize sanitization patterns
-# Tried increasing interprocedural analysis depth — still flags. Sanitization in
-# NormalizeStoredPath is verified correct. Microsoft says suppress if validated:
-# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3003#when-to-suppress-warnings
-dotnet_diagnostic.CA3003.severity = none
+# CA3003: Review code for file path injection vulnerabilities
+dotnet_diagnostic.CA3003.severity = warning
 
 # IDE0058: Expression value is never used – disabled; the `_ =` discards it
 # requires on fluent APIs (TagBuilder.AppendHtml, EF DbSet.Add, etc.) make code

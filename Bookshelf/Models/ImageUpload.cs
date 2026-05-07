@@ -104,6 +104,10 @@ public class ImageUpload
             : new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Security",
+        "CA3003:Review code for file path injection vulnerabilities",
+        Justification = "Path is validated upstream by UploadStoragePaths.NormalizeStoredPath, which requires the /uploads/ prefix and rejects anything not equal to Path.GetFileName(filename). Width/height are int?, format is whitelisted to jpg/png/webp.")]
     private async Task<ImageResult> GetResizedAsync(
         string normalizedPath,
         int? width,
