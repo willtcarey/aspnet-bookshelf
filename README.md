@@ -40,3 +40,13 @@ Bookshelf lets users:
 - **Database:** PostgreSQL
 - **CSS:** Tailwind CSS + DaisyUI
 - **Containerization:** Docker & Docker Compose
+
+## Running tests
+
+Tests live in the `Bookshelf.Tests` project and run inside the `web` container so the toolchain matches dev and (eventually) CI.
+
+```sh
+make test
+```
+
+That wraps `docker compose run --rm --no-deps -w /app web dotnet test Bookshelf.sln`. Use `make test-watch` for the `dotnet watch` variant during local iteration.
