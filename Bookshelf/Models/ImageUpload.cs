@@ -1,4 +1,3 @@
-using System.Globalization;
 using Bookshelf.Services;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -6,7 +5,6 @@ namespace Bookshelf.Models;
 
 public abstract record ImageResult;
 public record ImageStreamResult(Stream Stream, string ContentType) : ImageResult;
-public record ImageFileResult(string FilePath, string ContentType) : ImageResult;
 public record ImageNotFoundResult() : ImageResult;
 public record ImageErrorResult(string Message) : ImageResult;
 
@@ -21,29 +19,26 @@ public class ImageUpload
     private const int MaxResizeDimension = 4000;
     private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
     private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
-    private static readonly ImageFormat JpgFormat = new("jpg", ".jpg", "image/jpeg");
-    private static readonly ImageFormat PngFormat = new("png", ".png", "image/png");
-    private static readonly ImageFormat WebpFormat = new("webp", ".webp", "image/webp");
     private static readonly Dictionary<string, ImageFormat> Formats = new(StringComparer.OrdinalIgnoreCase)
     {
-        [JpgFormat.Name] = JpgFormat,
-        ["jpeg"] = JpgFormat,
-        [PngFormat.Name] = PngFormat,
-        [WebpFormat.Name] = WebpFormat
+        ["jpg"] = ImageFormat.Jpg,
+        ["jpeg"] = ImageFormat.Jpg,
+        ["png"] = ImageFormat.Png,
+        ["webp"] = ImageFormat.Webp
     };
 
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
-    private readonly UploadStoragePaths _paths;
+    private readonly ImageStorage _imageStorage;
 
     public ImageUpload(
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
-        UploadStoragePaths paths)
+        ImageStorage imageStorage)
     {
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
-        _paths = paths;
+        _imageStorage = imageStorage;
     }
 
     public async Task<UploadResult> SaveAsync(IFormFile? file)
@@ -70,13 +65,13 @@ public class ImageUpload
     }
 
     public async Task<ImageResult> GetAsync(
-        string? path,
+        string? key,
         int? width,
         int? height,
         string format = "webp")
     {
-        var normalizedPath = _paths.NormalizeStoredPath(path);
-        if (normalizedPath is null)
+        var imageKey = ImageUploadKey.Parse(key);
+        if (imageKey is null)
         {
             return new ImageNotFoundResult();
         }
@@ -86,15 +81,21 @@ public class ImageUpload
             return new ImageErrorResult($"Width and height must be between 1 and {MaxResizeDimension}.");
         }
 
+        var sourcePath = _imageStorage.BuildStoredPath(imageKey);
         if (!width.HasValue && !height.HasValue)
         {
-            return await GetOriginalAsync(normalizedPath);
+            return await GetOriginalAsync(sourcePath);
         }
 
         var imageFormat = ResolveFormat(format);
         return imageFormat is null
             ? new ImageErrorResult("Unsupported image format.")
-            : await GetResizedAsync(normalizedPath, width, height, imageFormat);
+            : await GetResizedAsync(sourcePath, width, height, imageFormat.Value);
+    }
+
+    public string? BuildUrl(string path, int? width = null, int? height = null, string? format = null)
+    {
+        return _imageStorage.BuildUrl(path, width, height, format);
     }
 
     private async Task<ImageResult> GetOriginalAsync(string sourcePath)
@@ -106,78 +107,24 @@ public class ImageUpload
     }
 
     private async Task<ImageResult> GetResizedAsync(
-        string normalizedPath,
+        string sourcePath,
         int? width,
         int? height,
         ImageFormat format)
     {
-        var requestedFileName = Path.GetFileName(normalizedPath);
-        var actualSourcePath = Directory
-            .EnumerateFiles(_paths.UploadRootPath)
-            .FirstOrDefault(f => Path.GetFileName(f) == requestedFileName);
-        if (actualSourcePath is null)
-        {
-            return new ImageNotFoundResult();
-        }
-        var sourceFileNameNoExt = Path.GetFileNameWithoutExtension(actualSourcePath);
-        var variantFolder = string.Create(
-            CultureInfo.InvariantCulture,
-            $"{width ?? 0}x{height ?? 0}");
-        var safeExtension = format.Name switch
-        {
-            "jpg" => ".jpg",
-            "png" => ".png",
-            "webp" => ".webp",
-            _ => throw new InvalidOperationException("Unsupported image format.")
-        };
-        var cachePath = Path.Combine(
-            _paths.CacheRootPath,
-            variantFolder,
-            $"{sourceFileNameNoExt}{safeExtension}");
-        if (File.Exists(cachePath))
-        {
-            return new ImageFileResult(cachePath, format.ContentType);
-        }
-
-        await using var sourceStream = await _fileStorage.GetAsync(normalizedPath);
+        await using var sourceStream = await _fileStorage.GetAsync(sourcePath);
         if (sourceStream is null)
         {
             return new ImageNotFoundResult();
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-
         var resizeWidth = width ?? MaxResizeDimension;
         var resizeHeight = height ?? MaxResizeDimension;
 
-        await using var resizedStream = await _imageProcessor.ResizeAsync(
-            sourceStream, resizeWidth, resizeHeight, format.Name);
+        var resizedStream = await _imageProcessor.ResizeAsync(
+            sourceStream, resizeWidth, resizeHeight, GetProcessorFormat(format));
 
-        var temporaryPath = $"{cachePath}.{Guid.NewGuid():N}.tmp";
-
-        try
-        {
-            await using (var output = File.Create(temporaryPath))
-            {
-                if (resizedStream.CanSeek)
-                {
-                    resizedStream.Position = 0;
-                }
-
-                await resizedStream.CopyToAsync(output);
-            }
-
-            File.Move(temporaryPath, cachePath, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(temporaryPath))
-            {
-                File.Delete(temporaryPath);
-            }
-        }
-
-        return new ImageFileResult(cachePath, format.ContentType);
+        return new ImageStreamResult(resizedStream, GetContentType(format));
     }
 
     private static bool IsValidDimension(int? value)
@@ -188,8 +135,30 @@ public class ImageUpload
     private static ImageFormat? ResolveFormat(string? format)
     {
         return string.IsNullOrWhiteSpace(format)
-            ? WebpFormat
+            ? ImageFormat.Webp
             : (Formats.TryGetValue(format.Trim(), out var imageFormat) ? imageFormat : null);
+    }
+
+    private static string GetProcessorFormat(ImageFormat format)
+    {
+        return format switch
+        {
+            ImageFormat.Jpg => "jpg",
+            ImageFormat.Png => "png",
+            ImageFormat.Webp => "webp",
+            _ => throw new InvalidOperationException("Unsupported image format.")
+        };
+    }
+
+    private static string GetContentType(ImageFormat format)
+    {
+        return format switch
+        {
+            ImageFormat.Jpg => "image/jpeg",
+            ImageFormat.Png => "image/png",
+            ImageFormat.Webp => "image/webp",
+            _ => throw new InvalidOperationException("Unsupported image format.")
+        };
     }
 
     private static string GetContentTypeFromPath(string path)
@@ -199,5 +168,10 @@ public class ImageUpload
             : "application/octet-stream";
     }
 
-    private sealed record ImageFormat(string Name, string Extension, string ContentType);
+    private enum ImageFormat
+    {
+        Jpg,
+        Png,
+        Webp
+    }
 }

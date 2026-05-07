@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Bookshelf.Services;
 
 public class UploadStoragePaths
@@ -65,14 +63,6 @@ public class UploadStoragePaths
             ?? throw new InvalidOperationException($"Invalid upload path '{path}'.");
 
         return Path.Combine(UploadRootPath, Path.GetFileName(normalizedPath));
-    }
-
-    public string BuildCachePath(string normalizedPath, int? width, int? height, string extension)
-    {
-        var variantFolder = $"{width?.ToString(CultureInfo.InvariantCulture) ?? "auto"}x{height?.ToString(CultureInfo.InvariantCulture) ?? "auto"}";
-        var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
-
-        return Path.Combine(CacheRootPath, variantFolder, $"{fileName}{extension}");
     }
 
     public IEnumerable<string> EnumerateCacheVariantPaths(string path)

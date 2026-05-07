@@ -22,25 +22,24 @@ public class ImagesController : Controller
     {
         var result = await _imageUpload.SaveAsync(file);
 
-        return result.IsSuccess
-            ? Ok(new { path = result.Path })
+        return result.IsSuccess && result.Path is not null
+            ? Ok(new { path = result.Path, previewUrl = _imageUpload.BuildUrl(result.Path, 64, 96) })
             : BadRequest(new { error = result.Error });
     }
 
-    [HttpGet("{*path}")]
-    [HttpHead("{*path}")]
+    [HttpGet("{key}")]
+    [HttpHead("{key}")]
     public async Task<IActionResult> Get(
-        string? path,
+        string? key,
         [FromQuery(Name = "w")] int? width,
         [FromQuery(Name = "h")] int? height,
         [FromQuery] string format = "webp")
     {
-        var result = await _imageUpload.GetAsync(path, width, height, format);
+        var result = await _imageUpload.GetAsync(key, width, height, format);
 
         return result switch
         {
             ImageStreamResult stream => WithCacheHeaders(File(stream.Stream, stream.ContentType)),
-            ImageFileResult file => WithCacheHeaders(PhysicalFile(file.FilePath, file.ContentType)),
             ImageErrorResult error => BadRequest(error.Message),
             _ => NotFound()
         };

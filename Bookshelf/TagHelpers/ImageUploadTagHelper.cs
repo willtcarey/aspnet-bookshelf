@@ -1,11 +1,18 @@
+using Bookshelf.Services;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text;
 
 namespace Bookshelf.TagHelpers;
 
 [HtmlTargetElement("image-upload", Attributes = "path")]
 public class ImageUploadTagHelper : TagHelper
 {
+    private readonly ImageStorage _imageStorage;
+
+    public ImageUploadTagHelper(ImageStorage imageStorage)
+    {
+        _imageStorage = imageStorage;
+    }
+
     [HtmlAttributeName("path")]
     public string Path { get; set; } = string.Empty;
 
@@ -31,9 +38,16 @@ public class ImageUploadTagHelper : TagHelper
             return;
         }
 
+        var source = _imageStorage.BuildUrl(Path, Width, Height, Format);
+        if (source is null)
+        {
+            output.SuppressOutput();
+            return;
+        }
+
         output.TagName = "img";
         output.TagMode = TagMode.SelfClosing;
-        output.Attributes.SetAttribute("src", BuildSource());
+        output.Attributes.SetAttribute("src", source);
 
         if (!string.IsNullOrWhiteSpace(Alt))
         {
@@ -43,40 +57,5 @@ public class ImageUploadTagHelper : TagHelper
         {
             output.Attributes.SetAttribute("alt", string.Empty);
         }
-    }
-
-    private string BuildSource()
-    {
-        var encodedPath = string.Join(
-            '/',
-            Path.Replace('\\', '/')
-                .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(Uri.EscapeDataString));
-
-        var url = new StringBuilder($"/images/{encodedPath}");
-        var queryParameters = new List<string>();
-
-        if (Width is > 0)
-        {
-            queryParameters.Add($"w={Width.Value}");
-        }
-
-        if (Height is > 0)
-        {
-            queryParameters.Add($"h={Height.Value}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(Format))
-        {
-            queryParameters.Add($"format={Uri.EscapeDataString(Format.Trim())}");
-        }
-
-        if (queryParameters.Count > 0)
-        {
-            url.Append('?');
-            url.Append(string.Join('&', queryParameters));
-        }
-
-        return url.ToString();
     }
 }
