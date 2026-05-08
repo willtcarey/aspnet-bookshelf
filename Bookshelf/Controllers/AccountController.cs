@@ -16,6 +16,7 @@ public class AccountController : Controller
     }
 
     // GET: Account/Register
+    [HttpGet]
     public IActionResult Register()
     {
         return View();
@@ -26,6 +27,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
+        ArgumentNullException.ThrowIfNull(model);
+
         if (ModelState.IsValid)
         {
             var user = new IdentityUser { UserName = model.Email, Email = model.Email };
@@ -47,6 +50,7 @@ public class AccountController : Controller
     }
 
     // GET: Account/Login
+    [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
@@ -58,6 +62,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
+        ArgumentNullException.ThrowIfNull(model);
+
         ViewData["ReturnUrl"] = returnUrl;
 
         if (ModelState.IsValid)

@@ -9,6 +9,9 @@ public class UploadStoragePaths
 
     public UploadStoragePaths(IWebHostEnvironment environment, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(environment);
+        ArgumentNullException.ThrowIfNull(configuration);
+
         var webRootPath = environment.WebRootPath;
         if (string.IsNullOrWhiteSpace(webRootPath))
         {
@@ -34,7 +37,7 @@ public class UploadStoragePaths
             .Replace('\\', '/')
             .Trim();
 
-        if (normalizedPath.Contains('\0'))
+        if (normalizedPath.Contains('\0', StringComparison.Ordinal))
         {
             return null;
         }
@@ -47,14 +50,11 @@ public class UploadStoragePaths
         }
 
         var fileName = normalizedPath[prefix.Length..];
-        if (string.IsNullOrWhiteSpace(fileName)
+        return string.IsNullOrWhiteSpace(fileName)
             || fileName is "." or ".."
-            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return $"/{UploadsPath}/{fileName}";
+            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal)
+            ? null
+            : $"/{UploadsPath}/{fileName}";
     }
 
     public string ResolveUploadAbsolutePath(string path)
@@ -63,14 +63,6 @@ public class UploadStoragePaths
             ?? throw new InvalidOperationException($"Invalid upload path '{path}'.");
 
         return Path.Combine(UploadRootPath, Path.GetFileName(normalizedPath));
-    }
-
-    public string BuildCachePath(string normalizedPath, int? width, int? height, string extension)
-    {
-        var variantFolder = $"{width?.ToString() ?? "auto"}x{height?.ToString() ?? "auto"}";
-        var fileName = Path.GetFileNameWithoutExtension(normalizedPath);
-
-        return Path.Combine(CacheRootPath, variantFolder, $"{fileName}{extension}");
     }
 
     public IEnumerable<string> EnumerateCacheVariantPaths(string path)

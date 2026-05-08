@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Bookshelf.Data;
 using Bookshelf.Models;
@@ -19,6 +18,8 @@ public class AuthorRepository
 
     public AuthorRepository(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
     {
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+
         _context = context;
         _userId = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("AuthorRepository requires an authenticated user.");
@@ -45,12 +46,19 @@ public class AuthorRepository
     }
 
     /// <summary>
-    /// Creates a new Author from the submitted view model. The new author is
-    /// automatically scoped to the current user. Any validation errors are
-    /// written directly to <paramref name="modelState"/>.
+    /// Validates and creates a new Author from the submitted view model. The
+    /// new author is automatically scoped to the current user.
     /// </summary>
-    public async Task<RepositoryResult> CreateAsync(AuthorFormViewModel viewModel, ModelStateDictionary modelState)
+    public async Task<RepositoryResult> CreateAsync(AuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        var validationResult = await ValidateAsync(viewModel, currentId: null);
+        if (!validationResult.Succeeded)
+        {
+            return validationResult;
+        }
+
         var author = new Author { UserId = _userId };
         ApplyFormData(author, viewModel);
         _context.Authors.Add(author);
@@ -59,18 +67,25 @@ public class AuthorRepository
     }
 
     /// <summary>
-    /// Updates the Author identified by <paramref name="id"/> from the
-    /// submitted view model. Returns NotFound if the author doesn't exist or
+    /// Validates and updates the Author identified by <paramref name="id"/> from
+    /// the submitted view model. Returns NotFound if the author doesn't exist or
     /// isn't owned by the current user (including the case where another
-    /// request deleted it between load and save). Any validation errors are
-    /// written directly to <paramref name="modelState"/>.
+    /// request deleted it between load and save).
     /// </summary>
-    public async Task<RepositoryResult> UpdateAsync(int id, AuthorFormViewModel viewModel, ModelStateDictionary modelState)
+    public async Task<RepositoryResult> UpdateAsync(int id, AuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         var author = await FindAsync(id);
         if (author == null)
         {
             return RepositoryResult.NotFound;
+        }
+
+        var validationResult = await ValidateAsync(viewModel, currentId: id);
+        if (!validationResult.Succeeded)
+        {
+            return validationResult;
         }
 
         ApplyFormData(author, viewModel);
@@ -81,7 +96,11 @@ public class AuthorRepository
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await ExistsAsync(id)) return RepositoryResult.NotFound;
+            if (!await ExistsAsync(id))
+            {
+                return RepositoryResult.NotFound;
+            }
+
             throw;
         }
 
@@ -102,6 +121,21 @@ public class AuthorRepository
     {
         return _context.Authors
             .AnyAsync(a => a.Id == id && a.UserId == _userId);
+    }
+
+    private async Task<RepositoryResult> ValidateAsync(AuthorFormViewModel viewModel, int? currentId)
+    {
+        return await NameExistsForUserAsync(viewModel.Name, currentId)
+            ? RepositoryResult.ValidationFailed(
+                nameof(viewModel.Name),
+                "You already have an author with this name.")
+            : RepositoryResult.Success;
+    }
+
+    private Task<bool> NameExistsForUserAsync(string name, int? excludingId)
+    {
+        return _context.Authors
+            .AnyAsync(a => a.UserId == _userId && a.Name == name && (excludingId == null || a.Id != excludingId));
     }
 
     private static void ApplyFormData(Author author, AuthorFormViewModel viewModel)

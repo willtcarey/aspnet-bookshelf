@@ -26,6 +26,8 @@ public class FormCheckboxTagHelper : FormTagHelperBase
     protected override void RenderContent(
         TagHelperOutput output, TagBuilder labelTag, TagBuilder inputTag, TagBuilder validationTag)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         var row = new TagBuilder("div");
         row.AddCssClass("flex items-center gap-3");
         row.InnerHtml.AppendHtml(inputTag);

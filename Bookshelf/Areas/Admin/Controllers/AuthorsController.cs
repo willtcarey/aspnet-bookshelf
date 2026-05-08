@@ -23,33 +23,48 @@ public class AuthorsController : AdminCrudController<Author, AdminAuthorFormView
         Context.Authors.Include(a => a.Books).Include(a => a.User);
     protected override Dictionary<string, Expression<Func<Author, object?>>> SortMap => new()
     {
-        ["name"] = a => a.Name,
-        ["owner"] = a => a.User.Email!
+        ["NAME"] = a => a.Name,
+        ["OWNER"] = a => a.User.Email!
     };
     protected override Expression<Func<Author, object?>> DefaultSort => a => a.Name;
 
-    protected override AdminAuthorFormViewModel MapToViewModel(Author entity) => new()
+    protected override AdminAuthorFormViewModel MapToViewModel(Author entity)
     {
-        Id = entity.Id,
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new()
+        {
+            Id = entity.Id,
         Name = entity.Name,
         UserId = entity.UserId
-    };
-
-    protected override Author CreateEntity(AdminAuthorFormViewModel vm) => new()
-    {
-        Name = vm.Name,
-        UserId = vm.UserId
-    };
-
-    protected override void UpdateEntity(Author entity, AdminAuthorFormViewModel vm)
-    {
-        entity.Name = vm.Name;
-        entity.UserId = vm.UserId;
+        };
     }
 
-    protected override async Task PopulateFormDataAsync(AdminAuthorFormViewModel vm)
+    protected override Author CreateEntity(AdminAuthorFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        return new()
+        {
+            Name = viewModel.Name,
+            UserId = viewModel.UserId
+        };
+    }
+
+    protected override void UpdateEntity(Author entity, AdminAuthorFormViewModel viewModel)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        entity.Name = viewModel.Name;
+        entity.UserId = viewModel.UserId;
+    }
+
+    protected override async Task PopulateFormDataAsync(AdminAuthorFormViewModel viewModel)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         var users = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
-        vm.Users = new SelectList(users, "Id", "Email", vm.UserId);
+        viewModel.Users = new SelectList(users, "Id", "Email", viewModel.UserId);
     }
 }

@@ -1,3 +1,4 @@
+using Bookshelf.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
@@ -14,6 +15,8 @@ namespace Bookshelf.TagHelpers;
 [HtmlTargetElement("form-file", Attributes = "asp-for")]
 public class FormFileTagHelper : FormTagHelperBase
 {
+    private readonly ImageStorage _imageStorage;
+
     [HtmlAttributeName("accept")]
     public string? Accept { get; set; }
 
@@ -22,16 +25,21 @@ public class FormFileTagHelper : FormTagHelperBase
 
     /// <summary>
     /// The URL that the client-side JavaScript POSTs the selected file to.
-    /// The endpoint must return JSON with a <c>path</c> property.
+    /// The endpoint must return JSON with <c>path</c> and <c>previewUrl</c> properties.
     /// </summary>
     [HtmlAttributeName("upload-url")]
     public string UploadUrl { get; set; } = "/images/create";
 
-    public FormFileTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
-        : base(generator, encoder) { }
+    public FormFileTagHelper(IHtmlGenerator generator, HtmlEncoder encoder, ImageStorage imageStorage)
+        : base(generator, encoder)
+    {
+        _imageStorage = imageStorage;
+    }
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
+        ArgumentNullException.ThrowIfNull(output);
+
         var existingPath = For.Model as string;
         var hasExistingImage = !string.IsNullOrWhiteSpace(existingPath);
 
@@ -74,12 +82,13 @@ public class FormFileTagHelper : FormTagHelperBase
         output.Content.AppendHtml(validationTag);
     }
 
-    private static TagBuilder BuildPreviewContainer(string? existingPath)
+    private TagBuilder BuildPreviewContainer(string? existingPath)
     {
         var container = new TagBuilder("div");
         container.Attributes["data-upload-preview"] = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(existingPath))
+        var imageUrl = _imageStorage.BuildUrl(existingPath, width: 64, height: 96);
+        if (imageUrl is null)
         {
             container.AddCssClass("hidden");
             return container;
@@ -89,7 +98,7 @@ public class FormFileTagHelper : FormTagHelperBase
         card.AddCssClass("flex items-center gap-4 rounded-2xl bg-base-100 p-4 ring-1 ring-base-300/60");
 
         var img = new TagBuilder("img");
-        img.Attributes["src"] = BuildImageUrl(existingPath, width: 64, height: 96);
+        img.Attributes["src"] = imageUrl;
         img.Attributes["alt"] = "Current image";
         img.AddCssClass("h-24 w-16 rounded-lg object-cover shadow");
         img.TagRenderMode = TagRenderMode.SelfClosing;
@@ -161,17 +170,6 @@ public class FormFileTagHelper : FormTagHelperBase
         error.AddCssClass("label text-error hidden");
         error.Attributes["data-upload-error"] = string.Empty;
         return error;
-    }
-
-    private static string BuildImageUrl(string path, int width, int height)
-    {
-        var encodedPath = string.Join(
-            '/',
-            path.Replace('\\', '/')
-                .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(Uri.EscapeDataString));
-
-        return $"/images/{encodedPath}?w={width}&h={height}";
     }
 
     // Required by the base class but unused — we override Process entirely.

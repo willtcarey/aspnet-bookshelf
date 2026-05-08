@@ -3,7 +3,8 @@
  *
  * Uploads files directly to a dedicated endpoint and stores the resulting
  * storage path in a hidden form field. The resource form then submits the
- * path reference rather than the file itself.
+ * path reference rather than the file itself. The upload response also includes
+ * a server-generated preview URL.
  *
  * Usage: Add `data-direct-upload="<url>"` to a container element.
  * The container must include:
@@ -64,9 +65,9 @@ function initContainer(container) {
         const form = container.closest("form");
         const promise = (async () => {
             try {
-                const path = await upload(uploadUrl, file, container);
-                pathInput.value = path;
-                showPreview(path);
+                const uploadResult = await upload(uploadUrl, file, container);
+                pathInput.value = uploadResult.path;
+                showPreview(uploadResult.previewUrl);
             } catch (err) {
                 showError(err.message || "Upload failed. Please try again.");
                 throw err; // Re-throw so Promise.all in guardForm rejects.
@@ -111,21 +112,12 @@ function initContainer(container) {
         }
     }
 
-    function showPreview(path) {
+    function showPreview(previewUrl) {
         if (!preview) return;
-
-        // Build a resized preview URL through the images controller.
-        const encodedPath = path
-            .split("/")
-            .filter(Boolean)
-            .map(encodeURIComponent)
-            .join("/");
-
-        const src = `/images/${encodedPath}?w=64&h=96`;
 
         preview.innerHTML = `
             <div class="flex items-center gap-4 rounded-2xl bg-base-100 p-4 ring-1 ring-base-300/60">
-                <img src="${src}" alt="Cover preview" class="h-24 w-16 rounded-lg object-cover shadow" />
+                <img src="${previewUrl}" alt="Cover preview" class="h-24 w-16 rounded-lg object-cover shadow" />
                 <div class="text-sm text-base-content/70">
                     <div class="font-semibold text-base-content">Cover uploaded</div>
                     <div>Select a new file to replace it.</div>
@@ -172,5 +164,9 @@ async function upload(url, file, container) {
     }
 
     const json = await response.json();
-    return json.path;
+    if (!json.path || !json.previewUrl) {
+        throw new Error("Upload failed.");
+    }
+
+    return json;
 }

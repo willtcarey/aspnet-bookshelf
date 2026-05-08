@@ -29,15 +29,17 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     protected virtual Task PopulateFormDataAsync(TFormViewModel viewModel) => Task.CompletedTask;
 
     // GET: Admin/{Resource}
+    [HttpGet]
     public async Task<IActionResult> Index(int page = 1, string? sort = null, string? dir = null)
     {
         var query = GetBaseQuery();
         query = ApplySort(query, sort, dir);
-        var paginatedList = await PaginatedList<TEntity>.CreateAsync(query, page, PageSize, sort, dir);
+        var paginatedList = await PaginatedList.CreateAsync(query, page, PageSize, sort, dir);
         return View(paginatedList);
     }
 
     // GET: Admin/{Resource}/Create
+    [HttpGet]
     public async Task<IActionResult> Create()
     {
         var viewModel = new TFormViewModel();
@@ -63,6 +65,7 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     }
 
     // GET: Admin/{Resource}/Edit/5
+    [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -80,6 +83,8 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, TFormViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
         if (id != viewModel.Id) return NotFound();
 
         var entity = await DbSet.FindAsync(id);
@@ -107,14 +112,13 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     }
 
     // GET: Admin/{Resource}/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
 
         var entity = await GetBaseQuery().FirstOrDefaultAsync(e => e.Id == id);
-        if (entity == null) return NotFound();
-
-        return View(entity);
+        return entity == null ? NotFound() : View(entity);
     }
 
     // POST: Admin/{Resource}/Delete/5
@@ -134,15 +138,10 @@ public abstract class AdminCrudController<TEntity, TFormViewModel> : AdminContro
     private IQueryable<TEntity> ApplySort(IQueryable<TEntity> query, string? sort, string? dir)
     {
         var descending = string.Equals(dir, "desc", StringComparison.OrdinalIgnoreCase);
-        var sortKey = sort?.ToLowerInvariant();
+        var sortKey = sort?.ToUpperInvariant();
 
-        if (sortKey != null && SortMap.TryGetValue(sortKey, out var sortExpression))
-        {
-            return descending
-                ? query.OrderByDescending(sortExpression)
-                : query.OrderBy(sortExpression);
-        }
-
-        return query.OrderBy(DefaultSort);
+        return sortKey != null && SortMap.TryGetValue(sortKey, out var sortExpression)
+            ? (descending ? query.OrderByDescending(sortExpression) : query.OrderBy(sortExpression))
+            : query.OrderBy(DefaultSort);
     }
 }
