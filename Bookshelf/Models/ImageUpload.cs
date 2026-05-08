@@ -129,24 +129,24 @@ public class ImageUpload
         return new ImageStreamResult(resizedStream, format.ContentType);
     }
 
-    private static bool IsValidDimension(int? value)
+    internal static bool IsValidDimension(int? value)
     {
         return !value.HasValue || (value.Value >= 1 && value.Value <= MaxResizeDimension);
     }
 
-    private static ImageFormat? ResolveFormat(string? format)
+    internal static ImageFormat? ResolveFormat(string? format)
     {
         return string.IsNullOrWhiteSpace(format)
             ? WebpFormat
             : (Formats.TryGetValue(format.Trim(), out var imageFormat) ? imageFormat : null);
     }
 
-    private static string GetContentTypeFromPath(string path)
+    internal static string GetContentTypeFromPath(string path)
     {
         return ContentTypeProvider.TryGetContentType(path, out var contentType)
             ? contentType
             : "application/octet-stream";
     }
 
-    private sealed record ImageFormat(string Name, string ContentType);
+    internal sealed record ImageFormat(string Name, string ContentType);
 }
