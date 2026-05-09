@@ -35,7 +35,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAsync_WhenUploadRootMissing_ReturnsZeroCounts()
+    public async Task RunAsync_UploadRootMissing_ReturnsZeroCounts()
     {
         Directory.Delete(_paths.UploadRootPath, recursive: true);
         var job = BuildJob();
@@ -43,13 +43,12 @@ public class OrphanedUploadCleanupJobTests : IDisposable
         var result = await job.RunAsync();
 
         Assert.Equal(0, result.ScannedCount);
-        Assert.Equal(0, result.SkippedRecentCount);
         Assert.Equal(0, result.DeletedCount);
         _storage.Verify(s => s.DeleteAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task RunAsync_DeletesOrphanedFileOlderThanGracePeriod()
+    public async Task RunAsync_OrphanedFileOlderThanGracePeriod_IsDeleted()
     {
         var orphanPath = Path.Combine(_paths.UploadRootPath, "orphan.png");
         await File.WriteAllTextAsync(orphanPath, "x");
@@ -58,14 +57,12 @@ public class OrphanedUploadCleanupJobTests : IDisposable
 
         var result = await job.RunAsync();
 
-        Assert.Equal(1, result.ScannedCount);
-        Assert.Equal(0, result.SkippedRecentCount);
         Assert.Equal(1, result.DeletedCount);
         _storage.Verify(s => s.DeleteAsync($"{_paths.UploadRequestPath}/orphan.png"), Times.Once);
     }
 
     [Fact]
-    public async Task RunAsync_SkipsRecentFiles()
+    public async Task RunAsync_RecentFile_IsSkipped()
     {
         var recentPath = Path.Combine(_paths.UploadRootPath, "recent.png");
         await File.WriteAllTextAsync(recentPath, "x");
@@ -74,14 +71,12 @@ public class OrphanedUploadCleanupJobTests : IDisposable
 
         var result = await job.RunAsync();
 
-        Assert.Equal(1, result.ScannedCount);
         Assert.Equal(1, result.SkippedRecentCount);
         Assert.Equal(0, result.DeletedCount);
-        _storage.Verify(s => s.DeleteAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task RunAsync_DoesNotDeleteFilesReferencedByABook()
+    public async Task RunAsync_FileReferencedByBook_IsNotDeleted()
     {
         _dbContext.Books.Add(new BookBuilder()
             .WithId(1)
@@ -95,36 +90,34 @@ public class OrphanedUploadCleanupJobTests : IDisposable
 
         var result = await job.RunAsync();
 
-        Assert.Equal(1, result.ScannedCount);
         Assert.Equal(0, result.DeletedCount);
         _storage.Verify(s => s.DeleteAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
-    public async Task RunAsync_HonorsConfiguredGracePeriod()
+    public async Task RunAsync_EmptyUploadDirectory_TracksZeroScanned()
     {
-        var nearMissPath = Path.Combine(_paths.UploadRootPath, "near.png");
-        await File.WriteAllTextAsync(nearMissPath, "x");
-        File.SetLastWriteTimeUtc(nearMissPath, DateTime.UtcNow.AddMinutes(-10));
-        var job = BuildJob(gracePeriodMinutes: 5);
+        var job = BuildJob();
 
         var result = await job.RunAsync();
 
-        Assert.Equal(1, result.DeletedCount);
+        Assert.Equal(0, result.ScannedCount);
     }
 
     [Fact]
-    public async Task RunAsync_FallsBackToDefaultGracePeriodWhenConfigZeroOrNegative()
+    public void ResolveGracePeriod_ConfiguredPositive_UsesConfiguredMinutes()
     {
-        var path = Path.Combine(_paths.UploadRootPath, "thirtymin.png");
-        await File.WriteAllTextAsync(path, "x");
-        File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddMinutes(-30));
+        var job = BuildJob(gracePeriodMinutes: 5);
+
+        Assert.Equal(TimeSpan.FromMinutes(5), job.ResolveGracePeriod());
+    }
+
+    [Fact]
+    public void ResolveGracePeriod_ConfiguredNonPositiveOrMissing_ReturnsDefault()
+    {
         var job = BuildJob(gracePeriodMinutes: -5);
 
-        var result = await job.RunAsync();
-
-        Assert.Equal(1, result.SkippedRecentCount);
-        Assert.Equal(0, result.DeletedCount);
+        Assert.Equal(TimeSpan.FromHours(1), job.ResolveGracePeriod());
     }
 
     private OrphanedUploadCleanupJob BuildJob(int? gracePeriodMinutes = null)

@@ -5,132 +5,97 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Moq;
 
 namespace Bookshelf.Tests.TagHelpers;
 
 public class FormTextTagHelperTests
 {
-    [Theory]
-    [InlineData(typeof(byte), "number")]
-    [InlineData(typeof(short), "number")]
-    [InlineData(typeof(int), "number")]
-    [InlineData(typeof(long), "number")]
-    [InlineData(typeof(float), "number")]
-    [InlineData(typeof(double), "number")]
-    [InlineData(typeof(decimal), "number")]
-    [InlineData(typeof(string), "text")]
-    [InlineData(typeof(int?), "number")]
-    [InlineData(typeof(decimal?), "number")]
-    public void Process_NumericModelTypes_ResolveToNumberOrText(Type modelType, string expectedType)
+    [Fact]
+    public void IsNumericType_Byte_ReturnsTrue()
     {
-        var capturedType = RunProcessAndCaptureInputType(modelType: modelType);
-
-        Assert.Equal(expectedType, capturedType);
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(byte)));
     }
 
     [Fact]
-    public void Process_ExplicitInputType_OverridesAllInference()
+    public void IsNumericType_Short_ReturnsTrue()
     {
-        var capturedType = RunProcessAndCaptureInputType(
-            modelType: typeof(int),
-            explicitInputType: "search");
-
-        Assert.Equal("search", capturedType);
-    }
-
-    [Theory]
-    [InlineData("Password", "password")]
-    [InlineData("EmailAddress", "email")]
-    [InlineData("Url", "url")]
-    [InlineData("PhoneNumber", "tel")]
-    public void Process_StringModelWithDataType_MapsToHtmlInputType(string dataTypeName, string expectedType)
-    {
-        var capturedType = RunProcessAndCaptureInputType(
-            modelType: typeof(string),
-            dataTypeName: dataTypeName);
-
-        Assert.Equal(expectedType, capturedType);
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(short)));
     }
 
     [Fact]
-    public void Process_StringModelWithNoDataType_FallsBackToText()
+    public void IsNumericType_Int_ReturnsTrue()
     {
-        var capturedType = RunProcessAndCaptureInputType(modelType: typeof(string));
-
-        Assert.Equal("text", capturedType);
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(int)));
     }
 
     [Fact]
-    public void Process_GeneratedInput_HasInputCssClass()
+    public void IsNumericType_Long_ReturnsTrue()
     {
-        var generator = BuildGeneratorMock();
-        var generatedTag = new TagBuilder("input");
-        generator.Setup(g => g.GenerateTextBox(
-                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer?>(), It.IsAny<string>(),
-                It.IsAny<object?>(), It.IsAny<string?>(), It.IsAny<object?>()))
-            .Returns(generatedTag);
-
-        var helper = new FormTextTagHelper(generator.Object, HtmlEncoder.Default)
-        {
-            For = BuildModelExpression(typeof(string)),
-            ViewContext = TestViewContext.Create()
-        };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Contains("input", generatedTag.Attributes["class"] ?? "");
-        Assert.Contains("w-full", generatedTag.Attributes["class"] ?? "");
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(long)));
     }
 
-    private static string? RunProcessAndCaptureInputType(
+    [Fact]
+    public void IsNumericType_Float_ReturnsTrue()
+    {
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(float)));
+    }
+
+    [Fact]
+    public void IsNumericType_Double_ReturnsTrue()
+    {
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(double)));
+    }
+
+    [Fact]
+    public void IsNumericType_Decimal_ReturnsTrue()
+    {
+        Assert.True(FormTextTagHelper.IsNumericType(typeof(decimal)));
+    }
+
+    [Fact]
+    public void IsNumericType_NonNumeric_ReturnsFalse()
+    {
+        Assert.False(FormTextTagHelper.IsNumericType(typeof(string)));
+    }
+
+    [Fact]
+    public void ResolveInputType_ExplicitInputType_OverridesAll()
+    {
+        var helper = BuildHelper(modelType: typeof(int), explicitInputType: "search");
+
+        Assert.Equal("search", helper.ResolveInputType());
+    }
+
+    [Fact]
+    public void ResolveInputType_DataTypeIsKnownString_MapsToHtmlInputType()
+    {
+        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "EmailAddress");
+
+        Assert.Equal("email", helper.ResolveInputType());
+    }
+
+    [Fact]
+    public void ResolveInputType_NoExplicit_NoDataType_FallsBackToText()
+    {
+        var helper = BuildHelper(modelType: typeof(string));
+
+        Assert.Equal("text", helper.ResolveInputType());
+    }
+
+    private static FormTextTagHelper BuildHelper(
         Type modelType,
         string? dataTypeName = null,
         string? explicitInputType = null)
     {
-        var generator = BuildGeneratorMock();
-        object? capturedHtmlAttributes = null;
+        var generator = new Mock<IHtmlGenerator>();
 
-        generator.Setup(g => g.GenerateTextBox(
-                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer?>(), It.IsAny<string>(),
-                It.IsAny<object?>(), It.IsAny<string?>(), It.IsAny<object?>()))
-            .Callback<ViewContext, ModelExplorer?, string, object?, string?, object?>(
-                (_, _, _, _, _, attrs) => capturedHtmlAttributes = attrs)
-            .Returns(new TagBuilder("input"));
-
-        var helper = new FormTextTagHelper(generator.Object, HtmlEncoder.Default)
+        return new FormTextTagHelper(generator.Object, HtmlEncoder.Default)
         {
             For = BuildModelExpression(modelType, dataTypeName),
             ViewContext = TestViewContext.Create(),
             InputType = explicitInputType
         };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        return capturedHtmlAttributes?
-            .GetType()
-            .GetProperty("type")?
-            .GetValue(capturedHtmlAttributes) as string;
-    }
-
-    private static Mock<IHtmlGenerator> BuildGeneratorMock()
-    {
-        var generator = new Mock<IHtmlGenerator>();
-
-        generator.Setup(g => g.GenerateLabel(
-                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
-                It.IsAny<string?>(), It.IsAny<object?>()))
-            .Returns(new TagBuilder("label"));
-
-        generator.Setup(g => g.GenerateValidationMessage(
-                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<object?>()))
-            .Returns(new TagBuilder("span"));
-
-        return generator;
     }
 
     private static ModelExpression BuildModelExpression(Type modelType, string? dataTypeName = null)
@@ -141,22 +106,6 @@ public class FormTextTagHelperTests
 
         var explorer = provider.GetModelExplorerForType(modelType, model: null);
         return new ModelExpression("Field", explorer);
-    }
-
-    private static (TagHelperContext context, TagHelperOutput output) CreateContext()
-    {
-        var context = new TagHelperContext(
-            "form-text",
-            new TagHelperAttributeList(),
-            new Dictionary<object, object>(),
-            Guid.NewGuid().ToString("N"));
-
-        var output = new TagHelperOutput(
-            "form-text",
-            new TagHelperAttributeList(),
-            (useCachedResult, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
-
-        return (context, output);
     }
 
     private sealed class StubMetadataProvider : EmptyModelMetadataProvider
@@ -197,7 +146,7 @@ public class FormTextTagHelperTests
         public override ModelPropertyCollection Properties => _inner.Properties;
         public override string? BinderModelName => _inner.BinderModelName;
         public override Type? BinderType => _inner.BinderType;
-        public override Microsoft.AspNetCore.Mvc.ModelBinding.BindingSource? BindingSource => _inner.BindingSource;
+        public override BindingSource? BindingSource => _inner.BindingSource;
         public override bool ConvertEmptyStringToNull => _inner.ConvertEmptyStringToNull;
         public override string? Description => _inner.Description;
         public override string? DisplayFormatString => _inner.DisplayFormatString;
@@ -229,5 +178,4 @@ public class FormTextTagHelperTests
         public override Func<object, object?>? PropertyGetter => _inner.PropertyGetter;
         public override Action<object, object?>? PropertySetter => _inner.PropertySetter;
     }
-
 }

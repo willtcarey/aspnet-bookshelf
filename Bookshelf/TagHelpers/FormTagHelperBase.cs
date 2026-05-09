@@ -52,7 +52,7 @@ public abstract class FormTagHelperBase : TagHelper
         RenderContent(output, labelTag, inputTag, validationTag);
     }
 
-    protected abstract TagBuilder GenerateInput();
+    protected internal abstract TagBuilder GenerateInput();
 
     protected virtual void RenderContent(
         TagHelperOutput output, TagBuilder labelTag, TagBuilder inputTag, TagBuilder validationTag)

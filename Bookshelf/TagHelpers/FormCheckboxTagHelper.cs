@@ -14,7 +14,7 @@ public class FormCheckboxTagHelper : FormTagHelperBase
     public FormCheckboxTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
         : base(generator, encoder) { }
 
-    protected override TagBuilder GenerateInput()
+    protected internal override TagBuilder GenerateInput()
     {
         var inputTag = Generator.GenerateCheckBox(
             ViewContext, For.ModelExplorer, For.Name, null, null);

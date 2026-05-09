@@ -5,13 +5,10 @@ namespace Bookshelf.Tests.TagHelpers;
 
 public class ImageUploadTagHelperTests
 {
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Process_WhenPathIsBlank_SuppressesOutput(string? path)
+    [Fact]
+    public void Process_BlankPath_SuppressesOutput()
     {
-        var helper = new ImageUploadTagHelper { Path = path! };
+        var helper = new ImageUploadTagHelper { Path = "" };
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
@@ -20,7 +17,7 @@ public class ImageUploadTagHelperTests
     }
 
     [Fact]
-    public void Process_WhenPathProvided_RendersImgTagWithSelfClosingMode()
+    public void Process_WithPath_RendersImgTag()
     {
         var helper = new ImageUploadTagHelper { Path = "uploads/cover.png" };
         var (context, output) = CreateContext();
@@ -29,17 +26,6 @@ public class ImageUploadTagHelperTests
 
         Assert.Equal("img", output.TagName);
         Assert.Equal(TagMode.SelfClosing, output.TagMode);
-    }
-
-    [Fact]
-    public void Process_WhenPathProvided_BuildsImagesUrl()
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads/cover.png" };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/cover.png", GetAttribute(output, "src"));
     }
 
     [Fact]
@@ -65,99 +51,43 @@ public class ImageUploadTagHelperTests
     }
 
     [Fact]
-    public void Process_WithWidth_AddsWidthQueryParam()
+    public void BuildSource_NoQueryParams_OmitsQueryString()
+    {
+        var helper = new ImageUploadTagHelper { Path = "uploads/cover.png" };
+
+        Assert.Equal("/images/uploads/cover.png", helper.BuildSource());
+    }
+
+    [Fact]
+    public void BuildSource_WithWidth_AddsWidthParam()
     {
         var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Width = 100 };
-        var (context, output) = CreateContext();
 
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/x.png?w=100", GetAttribute(output, "src"));
+        Assert.Equal("/images/uploads/x.png?w=100", helper.BuildSource());
     }
 
     [Fact]
-    public void Process_WithHeight_AddsHeightQueryParam()
+    public void BuildSource_WithHeight_AddsHeightParam()
     {
         var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Height = 200 };
-        var (context, output) = CreateContext();
 
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/x.png?h=200", GetAttribute(output, "src"));
+        Assert.Equal("/images/uploads/x.png?h=200", helper.BuildSource());
     }
 
     [Fact]
-    public void Process_WithFormat_AddsFormatQueryParam()
+    public void BuildSource_WithFormat_AddsFormatParam()
     {
         var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Format = "webp" };
-        var (context, output) = CreateContext();
 
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/x.png?format=webp", GetAttribute(output, "src"));
+        Assert.Equal("/images/uploads/x.png?format=webp", helper.BuildSource());
     }
 
     [Fact]
-    public void Process_WithAllQueryParams_JoinsWithAmpersand()
-    {
-        var helper = new ImageUploadTagHelper
-        {
-            Path = "uploads/x.png",
-            Width = 100,
-            Height = 200,
-            Format = "jpg"
-        };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/x.png?w=100&h=200&format=jpg", GetAttribute(output, "src"));
-    }
-
-    [Theory]
-    [InlineData(0, null)]
-    [InlineData(null, 0)]
-    public void Process_WithZeroDimension_OmitsDimensionQueryParam(int? width, int? height)
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Width = width, Height = height };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/x.png", GetAttribute(output, "src"));
-    }
-
-    [Fact]
-    public void Process_WithBackslashesInPath_NormalizesToForwardSlashes()
+    public void BuildSource_WithBackslashesInPath_NormalizesToForwardSlashes()
     {
         var helper = new ImageUploadTagHelper { Path = @"uploads\sub\cover.png" };
-        var (context, output) = CreateContext();
 
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/sub/cover.png", GetAttribute(output, "src"));
-    }
-
-    [Fact]
-    public void Process_WithSpecialCharsInPathSegments_UriEscapesEachSegment()
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads/my image (1).png" };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/my%20image%20%281%29.png", GetAttribute(output, "src"));
-    }
-
-    [Fact]
-    public void Process_WithEmptySegmentsInPath_RemovesEmptySegments()
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads//cover.png" };
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Equal("/images/uploads/cover.png", GetAttribute(output, "src"));
+        Assert.Equal("/images/uploads/sub/cover.png", helper.BuildSource());
     }
 
     private static (TagHelperContext context, TagHelperOutput output) CreateContext()

@@ -82,7 +82,7 @@ public class FormFileTagHelper : FormTagHelperBase
         output.Content.AppendHtml(validationTag);
     }
 
-    private TagBuilder BuildPreviewContainer(string? existingPath)
+    internal TagBuilder BuildPreviewContainer(string? existingPath)
     {
         var container = new TagBuilder("div");
         container.Attributes["data-upload-preview"] = string.Empty;
@@ -123,7 +123,7 @@ public class FormFileTagHelper : FormTagHelperBase
         return container;
     }
 
-    private TagBuilder BuildFileInput()
+    internal TagBuilder BuildFileInput()
     {
         var input = new TagBuilder("input");
         input.Attributes["type"] = "file";
@@ -138,7 +138,7 @@ public class FormFileTagHelper : FormTagHelperBase
         return input;
     }
 
-    private TagBuilder BuildHiddenInput(string? existingPath)
+    internal TagBuilder BuildHiddenInput(string? existingPath)
     {
         var input = new TagBuilder("input");
         input.Attributes["type"] = "hidden";
@@ -149,7 +149,7 @@ public class FormFileTagHelper : FormTagHelperBase
         return input;
     }
 
-    private TagBuilder BuildHint(bool hidden)
+    internal TagBuilder BuildHint(bool hidden)
     {
         var hint = new TagBuilder("label");
         hint.AddCssClass("label text-base-content/60");
@@ -173,5 +173,5 @@ public class FormFileTagHelper : FormTagHelperBase
     }
 
     // Required by the base class but unused — we override Process entirely.
-    protected override TagBuilder GenerateInput() => new("input");
+    protected internal override TagBuilder GenerateInput() => new("input");
 }

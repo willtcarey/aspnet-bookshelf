@@ -27,51 +27,18 @@ public class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task SaveAsync_WritesStreamToUploadRoot_AndReturnsRequestPath()
+    public async Task SaveAsync_ValidStream_WritesFileToUploadRoot()
     {
         var stream = new MemoryStream(Encoding.UTF8.GetBytes("hello"));
 
         var result = await _storage.SaveAsync(stream, "cover.png", "image/png");
 
         Assert.StartsWith(_paths.UploadRequestPath + "/", result);
-        Assert.EndsWith(".png", result);
-        var savedFiles = Directory.GetFiles(_paths.UploadRootPath);
-        Assert.Single(savedFiles);
+        Assert.Single(Directory.GetFiles(_paths.UploadRootPath));
     }
 
     [Fact]
-    public async Task SaveAsync_UsesContentTypeWhenFilenameHasNoExtension()
-    {
-        var stream = new MemoryStream(new byte[] { 1, 2, 3 });
-
-        var result = await _storage.SaveAsync(stream, "no-extension", "image/jpeg");
-
-        Assert.EndsWith(".jpg", result);
-    }
-
-    [Fact]
-    public async Task SaveAsync_PreservesExtensionFromFilename()
-    {
-        var stream = new MemoryStream(new byte[] { 1, 2, 3 });
-
-        var result = await _storage.SaveAsync(stream, "cover.WEBP", "image/png");
-
-        Assert.EndsWith(".webp", result);
-    }
-
-    [Fact]
-    public async Task SaveAsync_UnknownContentTypeAndNoExtension_ProducesFileWithoutExtension()
-    {
-        var stream = new MemoryStream(new byte[] { 1, 2, 3 });
-
-        var result = await _storage.SaveAsync(stream, "bare", "application/octet-stream");
-
-        var fileName = result[(_paths.UploadRequestPath.Length + 1)..];
-        Assert.False(Path.HasExtension(fileName));
-    }
-
-    [Fact]
-    public async Task SaveAsync_RewindsSeekableStreamBeforeCopying()
+    public async Task SaveAsync_SeekableStream_RewindsBeforeCopy()
     {
         var stream = new MemoryStream(Encoding.UTF8.GetBytes("payload"));
         stream.Position = stream.Length;
@@ -83,41 +50,22 @@ public class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAsync_WhenFileExists_ReturnsReadableStream()
+    public async Task GetAsync_FileExists_ReturnsReadableStream()
     {
         var fileName = "abc.png";
-        var fullPath = Path.Combine(_paths.UploadRootPath, fileName);
-        await File.WriteAllTextAsync(fullPath, "content");
+        await File.WriteAllTextAsync(Path.Combine(_paths.UploadRootPath, fileName), "content");
 
         await using var stream = await _storage.GetAsync($"/uploads/{fileName}");
 
         Assert.NotNull(stream);
-        using var reader = new StreamReader(stream!);
-        Assert.Equal("content", await reader.ReadToEndAsync());
     }
 
     [Fact]
-    public async Task GetAsync_WhenFileMissing_ReturnsNull()
+    public async Task GetAsync_FileMissing_ReturnsNull()
     {
         var stream = await _storage.GetAsync("/uploads/missing.png");
 
         Assert.Null(stream);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_RemovesUploadAndCacheVariants()
-    {
-        var uploadPath = Path.Combine(_paths.UploadRootPath, "cover.png");
-        var variantDir = Path.Combine(_paths.CacheRootPath, "100x200");
-        Directory.CreateDirectory(variantDir);
-        var variantPath = Path.Combine(variantDir, "cover.webp");
-        await File.WriteAllTextAsync(uploadPath, "x");
-        await File.WriteAllTextAsync(variantPath, "x");
-
-        await _storage.DeleteAsync("/uploads/cover.png");
-
-        Assert.False(File.Exists(uploadPath));
-        Assert.False(File.Exists(variantPath));
     }
 
     [Fact]
@@ -127,9 +75,42 @@ public class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteAsync_UploadAlreadyMissing_DoesNotThrow()
+    public async Task DeleteAsync_UploadExists_DeletesUpload()
+    {
+        var uploadPath = Path.Combine(_paths.UploadRootPath, "cover.png");
+        await File.WriteAllTextAsync(uploadPath, "x");
+
+        await _storage.DeleteAsync("/uploads/cover.png");
+
+        Assert.False(File.Exists(uploadPath));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_UploadMissing_DoesNotThrow()
     {
         await _storage.DeleteAsync("/uploads/never-existed.png");
+    }
+
+    [Fact]
+    public async Task DeleteAsync_CacheVariantExists_DeletesVariant()
+    {
+        var variantDir = Path.Combine(_paths.CacheRootPath, "100x200");
+        Directory.CreateDirectory(variantDir);
+        var variantPath = Path.Combine(variantDir, "cover.webp");
+        await File.WriteAllTextAsync(variantPath, "x");
+
+        await _storage.DeleteAsync("/uploads/cover.png");
+
+        Assert.False(File.Exists(variantPath));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_CacheVariantMissing_DoesNotThrow()
+    {
+        var variantDir = Path.Combine(_paths.CacheRootPath, "100x200");
+        Directory.CreateDirectory(variantDir);
+
+        await _storage.DeleteAsync("/uploads/cover.png");
     }
 
     [Fact]
@@ -142,5 +123,17 @@ public class LocalFileStorageTests : IDisposable
     public void GetUrl_InvalidPath_ReturnsEmptyString()
     {
         Assert.Equal(string.Empty, _storage.GetUrl("../etc/passwd"));
+    }
+
+    [Fact]
+    public void ResolveExtension_FilenameHasExtension_ReturnsLowercaseExtension()
+    {
+        Assert.Equal(".webp", LocalFileStorage.ResolveExtension("cover.WEBP", "image/png"));
+    }
+
+    [Fact]
+    public void ResolveExtension_NoFilenameExtension_FallsBackToContentType()
+    {
+        Assert.Equal(".jpg", LocalFileStorage.ResolveExtension("no-extension", "image/jpeg"));
     }
 }

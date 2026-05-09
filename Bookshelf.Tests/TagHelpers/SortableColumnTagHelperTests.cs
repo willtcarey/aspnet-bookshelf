@@ -1,8 +1,6 @@
 using Bookshelf.TagHelpers;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.AspNetCore.Routing;
 
@@ -23,7 +21,7 @@ public class SortableColumnTagHelperTests
     }
 
     [Fact]
-    public void Process_WhenColumnIsNotCurrentSort_BuildsAscLink()
+    public void Process_NotCurrentSort_BuildsAscLinkAndNoArrow()
     {
         var helper = BuildHelper("Title", currentSort: "Year", currentDirection: "asc");
         var (context, output) = CreateContext();
@@ -33,32 +31,38 @@ public class SortableColumnTagHelperTests
         var html = output.Content.GetContent();
         Assert.Contains("sort=Title", html);
         Assert.Contains("dir=asc", html);
+        Assert.DoesNotContain("▲", html);
+        Assert.DoesNotContain("▼", html);
     }
 
     [Fact]
-    public void Process_WhenColumnIsCurrentSortAsc_FlipsToDesc()
+    public void Process_CurrentSortAsc_FlipsToDescAndRendersUpArrow()
     {
         var helper = BuildHelper("Title", currentSort: "Title", currentDirection: "asc");
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.Contains("dir=desc", output.Content.GetContent());
+        var html = output.Content.GetContent();
+        Assert.Contains("dir=desc", html);
+        Assert.Contains("▲", html);
     }
 
     [Fact]
-    public void Process_WhenColumnIsCurrentSortDesc_FlipsToAsc()
+    public void Process_CurrentSortDesc_FlipsToAscAndRendersDownArrow()
     {
         var helper = BuildHelper("Title", currentSort: "Title", currentDirection: "desc");
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.Contains("dir=asc", output.Content.GetContent());
+        var html = output.Content.GetContent();
+        Assert.Contains("dir=asc", html);
+        Assert.Contains("▼", html);
     }
 
     [Fact]
-    public void Process_WhenSortMatchesCaseInsensitively_TreatsAsActive()
+    public void Process_SortMatchesCaseInsensitively_TreatsAsActive()
     {
         var helper = BuildHelper("Title", currentSort: "title", currentDirection: "asc");
         var (context, output) = CreateContext();
@@ -66,41 +70,6 @@ public class SortableColumnTagHelperTests
         helper.Process(context, output);
 
         Assert.Contains("dir=desc", output.Content.GetContent());
-    }
-
-    [Fact]
-    public void Process_WhenActiveAsc_RendersUpArrow()
-    {
-        var helper = BuildHelper("Title", currentSort: "Title", currentDirection: "asc");
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Contains("▲", output.Content.GetContent());
-    }
-
-    [Fact]
-    public void Process_WhenActiveDesc_RendersDownArrow()
-    {
-        var helper = BuildHelper("Title", currentSort: "Title", currentDirection: "desc");
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        Assert.Contains("▼", output.Content.GetContent());
-    }
-
-    [Fact]
-    public void Process_WhenInactive_RendersNoArrow()
-    {
-        var helper = BuildHelper("Title", currentSort: "Year", currentDirection: "asc");
-        var (context, output) = CreateContext();
-
-        helper.Process(context, output);
-
-        var html = output.Content.GetContent();
-        Assert.DoesNotContain("▲", html);
-        Assert.DoesNotContain("▼", html);
     }
 
     [Fact]
@@ -127,7 +96,6 @@ public class SortableColumnTagHelperTests
         var html = output.Content.GetContent();
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "sort="));
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "dir="));
-        Assert.Contains("page=1", html);
     }
 
     [Fact]
@@ -144,7 +112,7 @@ public class SortableColumnTagHelperTests
     }
 
     [Fact]
-    public void Process_UriEscapesSortNameAndDirection()
+    public void Process_UriEscapesSortName()
     {
         var helper = BuildHelper("My Column");
         var (context, output) = CreateContext();

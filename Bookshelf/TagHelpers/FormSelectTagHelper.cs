@@ -17,7 +17,7 @@ public class FormSelectTagHelper : FormTagHelperBase
     public FormSelectTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
         : base(generator, encoder) { }
 
-    protected override TagBuilder GenerateInput()
+    protected internal override TagBuilder GenerateInput()
     {
         var selectTag = Generator.GenerateSelect(
             ViewContext, For.ModelExplorer, null, For.Name, Items,
@@ -42,7 +42,7 @@ public class FormSelectTagHelper : FormTagHelperBase
         return selectTag;
     }
 
-    private bool ShouldSelectPlaceholder()
+    internal bool ShouldSelectPlaceholder()
     {
         var selectedValue = For.Model?.ToString();
         return string.IsNullOrWhiteSpace(selectedValue) || selectedValue == "0";

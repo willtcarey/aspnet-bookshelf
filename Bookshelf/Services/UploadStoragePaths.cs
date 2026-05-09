@@ -83,7 +83,7 @@ public class UploadStoragePaths
         }
     }
 
-    private static string NormalizeUploadsPath(string? configuredUploadPath)
+    internal static string NormalizeUploadsPath(string? configuredUploadPath)
     {
         var uploadPath = string.IsNullOrWhiteSpace(configuredUploadPath)
             ? "uploads"

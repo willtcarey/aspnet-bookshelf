@@ -14,7 +14,7 @@ public class FormTextTagHelper : FormTagHelperBase
     public FormTextTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
         : base(generator, encoder) { }
 
-    protected override TagBuilder GenerateInput()
+    protected internal override TagBuilder GenerateInput()
     {
         var inputTag = Generator.GenerateTextBox(
             ViewContext, For.ModelExplorer, For.Name, For.Model,
@@ -24,7 +24,7 @@ public class FormTextTagHelper : FormTagHelperBase
         return inputTag;
     }
 
-    private string ResolveInputType()
+    internal string ResolveInputType()
     {
         if (!string.IsNullOrWhiteSpace(InputType))
         {
@@ -43,7 +43,7 @@ public class FormTextTagHelper : FormTagHelperBase
         };
     }
 
-    private static bool IsNumericType(Type type)
+    internal static bool IsNumericType(Type type)
     {
         var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
 

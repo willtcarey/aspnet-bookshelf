@@ -24,7 +24,7 @@ public class HangfireDashboardAuthorizationFilterTests
     [Fact]
     public void Authorize_AuthenticatedNonAdmin_ReturnsFalse()
     {
-        var context = BuildContext(BuildAuthenticated(roles: Array.Empty<string>()));
+        var context = BuildContext(BuildAuthenticated(roles: new[] { "Editor" }));
 
         Assert.False(_filter.Authorize(context));
     }
@@ -35,14 +35,6 @@ public class HangfireDashboardAuthorizationFilterTests
         var context = BuildContext(BuildAuthenticated(roles: new[] { RoleNames.Admin }));
 
         Assert.True(_filter.Authorize(context));
-    }
-
-    [Fact]
-    public void Authorize_AuthenticatedWithDifferentRole_ReturnsFalse()
-    {
-        var context = BuildContext(BuildAuthenticated(roles: new[] { "Editor" }));
-
-        Assert.False(_filter.Authorize(context));
     }
 
     private static DashboardContext BuildContext(ClaimsPrincipal user)

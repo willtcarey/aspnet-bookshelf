@@ -100,7 +100,7 @@ public class ImageUpload
         return _imageStorage.BuildUrl(path, width, height, format);
     }
 
-    private async Task<ImageResult> GetOriginalAsync(string sourcePath)
+    internal async Task<ImageResult> GetOriginalAsync(string sourcePath)
     {
         var stream = await _fileStorage.GetAsync(sourcePath);
         return stream is null
@@ -108,7 +108,7 @@ public class ImageUpload
             : new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
     }
 
-    private async Task<ImageResult> GetResizedAsync(
+    internal async Task<ImageResult> GetResizedAsync(
         string sourcePath,
         int? width,
         int? height,

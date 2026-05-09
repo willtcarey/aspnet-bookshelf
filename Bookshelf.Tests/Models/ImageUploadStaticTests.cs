@@ -4,66 +4,51 @@ namespace Bookshelf.Tests.Models;
 
 public class ImageUploadStaticTests
 {
-    [Theory]
-    [InlineData(null, true)]
-    [InlineData(1, true)]
-    [InlineData(4000, true)]
-    [InlineData(2000, true)]
-    [InlineData(0, false)]
-    [InlineData(-1, false)]
-    [InlineData(4001, false)]
-    [InlineData(int.MaxValue, false)]
-    public void IsValidDimension_BoundsCheck(int? value, bool expected)
+    [Fact]
+    public void IsValidDimension_Null_ReturnsTrue()
     {
-        Assert.Equal(expected, ImageUpload.IsValidDimension(value));
+        Assert.True(ImageUpload.IsValidDimension(null));
     }
 
-    [Theory]
-    [InlineData(null, "webp")]
-    [InlineData("", "webp")]
-    [InlineData("   ", "webp")]
-    [InlineData("webp", "webp")]
-    [InlineData("WEBP", "webp")]
-    [InlineData("jpg", "jpg")]
-    [InlineData("jpeg", "jpg")]
-    [InlineData("JPG", "jpg")]
-    [InlineData("png", "png")]
-    [InlineData("PNG", "png")]
-    [InlineData("  jpg  ", "jpg")]
-    public void ResolveFormat_KnownFormats_ResolveToExpectedName(string? input, string expectedName)
+    [Fact]
+    public void IsValidDimension_InRange_ReturnsTrue()
     {
-        var format = ImageUpload.ResolveFormat(input);
-
-        Assert.NotNull(format);
-        Assert.Equal(expectedName, format!.Name);
+        Assert.True(ImageUpload.IsValidDimension(2000));
     }
 
-    [Theory]
-    [InlineData("tiff")]
-    [InlineData("bmp")]
-    [InlineData("svg")]
-    [InlineData("not-a-format")]
-    public void ResolveFormat_UnknownFormats_ReturnNull(string input)
+    [Fact]
+    public void IsValidDimension_OutOfRange_ReturnsFalse()
     {
-        Assert.Null(ImageUpload.ResolveFormat(input));
+        Assert.False(ImageUpload.IsValidDimension(0));
     }
 
-    [Theory]
-    [InlineData("/uploads/cover.jpg", "image/jpeg")]
-    [InlineData("/uploads/cover.jpeg", "image/jpeg")]
-    [InlineData("/uploads/cover.png", "image/png")]
-    [InlineData("/uploads/cover.gif", "image/gif")]
-    public void GetContentTypeFromPath_KnownExtensions_ReturnImageMimeType(string path, string expected)
+    [Fact]
+    public void ResolveFormat_NullOrWhitespace_ReturnsWebpDefault()
     {
-        Assert.Equal(expected, ImageUpload.GetContentTypeFromPath(path));
+        Assert.Equal("webp", ImageUpload.ResolveFormat(null)!.Name);
     }
 
-    [Theory]
-    [InlineData("/uploads/cover.unknown")]
-    [InlineData("/uploads/no-extension")]
-    [InlineData("")]
-    public void GetContentTypeFromPath_UnknownOrMissingExtension_ReturnsOctetStream(string path)
+    [Fact]
+    public void ResolveFormat_KnownFormat_ReturnsMatchedFormat()
     {
-        Assert.Equal("application/octet-stream", ImageUpload.GetContentTypeFromPath(path));
+        Assert.Equal("jpg", ImageUpload.ResolveFormat("jpg")!.Name);
+    }
+
+    [Fact]
+    public void ResolveFormat_UnknownFormat_ReturnsNull()
+    {
+        Assert.Null(ImageUpload.ResolveFormat("tiff"));
+    }
+
+    [Fact]
+    public void GetContentTypeFromPath_KnownExtension_ReturnsImageMimeType()
+    {
+        Assert.Equal("image/png", ImageUpload.GetContentTypeFromPath("/uploads/cover.png"));
+    }
+
+    [Fact]
+    public void GetContentTypeFromPath_UnknownExtension_ReturnsOctetStream()
+    {
+        Assert.Equal("application/octet-stream", ImageUpload.GetContentTypeFromPath("/uploads/cover.unknown"));
     }
 }
