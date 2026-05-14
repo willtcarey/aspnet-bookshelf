@@ -43,16 +43,20 @@ public class FormTextTagHelper : FormTagHelperBase
         };
     }
 
+    private static readonly HashSet<Type> NumericTypes = new()
+    {
+        typeof(byte),
+        typeof(short),
+        typeof(int),
+        typeof(long),
+        typeof(float),
+        typeof(double),
+        typeof(decimal)
+    };
+
     internal static bool IsNumericType(Type type)
     {
         var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
-
-        return underlyingType == typeof(byte)
-            || underlyingType == typeof(short)
-            || underlyingType == typeof(int)
-            || underlyingType == typeof(long)
-            || underlyingType == typeof(float)
-            || underlyingType == typeof(double)
-            || underlyingType == typeof(decimal);
+        return NumericTypes.Contains(underlyingType);
     }
 }

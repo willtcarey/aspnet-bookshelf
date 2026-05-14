@@ -83,12 +83,62 @@ public class FormTextTagHelperTests
         Assert.Equal("text", helper.ResolveInputType());
     }
 
+    [Fact]
+    public void ResolveInputType_DataTypeIsPassword_MapsToPassword()
+    {
+        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "Password");
+
+        Assert.Equal("password", helper.ResolveInputType());
+    }
+
+    [Fact]
+    public void ResolveInputType_DataTypeIsUrl_MapsToUrl()
+    {
+        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "Url");
+
+        Assert.Equal("url", helper.ResolveInputType());
+    }
+
+    [Fact]
+    public void ResolveInputType_DataTypeIsPhoneNumber_MapsToTel()
+    {
+        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "PhoneNumber");
+
+        Assert.Equal("tel", helper.ResolveInputType());
+    }
+
+    [Fact]
+    public void ResolveInputType_NumericModelType_FallsBackToNumber()
+    {
+        var helper = BuildHelper(modelType: typeof(int));
+
+        Assert.Equal("number", helper.ResolveInputType());
+    }
+
+    [Fact]
+    public void GenerateInput_AppliesInputCssClass()
+    {
+        var generatedInput = new TagBuilder("input");
+        var helper = BuildHelper(modelType: typeof(string), generatedInput: generatedInput);
+
+        var result = helper.GenerateInput();
+
+        Assert.Contains("input", result.Attributes["class"]);
+        Assert.Contains("w-full", result.Attributes["class"]);
+    }
+
     private static FormTextTagHelper BuildHelper(
         Type modelType,
         string? dataTypeName = null,
-        string? explicitInputType = null)
+        string? explicitInputType = null,
+        TagBuilder? generatedInput = null)
     {
         var generator = new Mock<IHtmlGenerator>();
+
+        generator.Setup(g => g.GenerateTextBox(
+                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
+                It.IsAny<object?>(), It.IsAny<string?>(), It.IsAny<object?>()))
+            .Returns(generatedInput ?? new TagBuilder("input"));
 
         return new FormTextTagHelper(generator.Object, HtmlEncoder.Default)
         {

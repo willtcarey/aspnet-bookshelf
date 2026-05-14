@@ -136,4 +136,28 @@ public class LocalFileStorageTests : IDisposable
     {
         Assert.Equal(".jpg", LocalFileStorage.ResolveExtension("no-extension", "image/jpeg"));
     }
+
+    [Fact]
+    public void ResolveExtension_NoFilenameExtension_PngContentType_ReturnsPng()
+    {
+        Assert.Equal(".png", LocalFileStorage.ResolveExtension("no-extension", "image/png"));
+    }
+
+    [Fact]
+    public void ResolveExtension_NoFilenameExtension_GifContentType_ReturnsGif()
+    {
+        Assert.Equal(".gif", LocalFileStorage.ResolveExtension("no-extension", "image/gif"));
+    }
+
+    [Fact]
+    public void ResolveExtension_NoFilenameExtension_WebpContentType_ReturnsWebp()
+    {
+        Assert.Equal(".webp", LocalFileStorage.ResolveExtension("no-extension", "image/webp"));
+    }
+
+    [Fact]
+    public void ResolveExtension_NoFilenameExtension_UnknownContentType_ReturnsEmpty()
+    {
+        Assert.Equal(string.Empty, LocalFileStorage.ResolveExtension("no-extension", "application/octet-stream"));
+    }
 }

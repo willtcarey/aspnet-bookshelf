@@ -14,6 +14,14 @@ public class HangfireDashboardAuthorizationFilterTests
     private readonly HangfireDashboardAuthorizationFilter _filter = new();
 
     [Fact]
+    public void Authorize_PrincipalWithoutIdentity_ReturnsFalse()
+    {
+        var context = BuildContext(new ClaimsPrincipal());
+
+        Assert.False(_filter.Authorize(context));
+    }
+
+    [Fact]
     public void Authorize_AnonymousUser_ReturnsFalse()
     {
         var context = BuildContext(BuildAnonymous());

@@ -259,6 +259,39 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetResizedAsync_FailureDuringWrite_CleansUpTempFile()
+    {
+        var format = ImageUpload.ResolveFormat("webp")!;
+        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
+        var throwingStream = new ThrowOnReadStream();
+        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(sourceStream);
+        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
+            .ReturnsAsync(throwingStream);
+
+        await Assert.ThrowsAsync<IOException>(
+            () => _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format));
+
+        var cachePath = _paths.BuildCachePath("/uploads/cover.png", 100, 200, format.Extension);
+        var dir = Path.GetDirectoryName(cachePath)!;
+        var tempFiles = Directory.Exists(dir) ? Directory.GetFiles(dir, "*.tmp") : Array.Empty<string>();
+        Assert.Empty(tempFiles);
+    }
+
+    private sealed class ThrowOnReadStream : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => 100;
+        public override long Position { get => 0; set { } }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new IOException("simulated read failure");
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [Fact]
     public async Task GetResizedAsync_AfterMove_TempFileDoesNotExist()
     {
         var format = ImageUpload.ResolveFormat("webp")!;

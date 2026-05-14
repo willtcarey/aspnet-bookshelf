@@ -73,6 +73,31 @@ public class SortableColumnTagHelperTests
     }
 
     [Fact]
+    public void Process_QueryParamWithNullValue_EmitsEmptyString()
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Query = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+        {
+            ["filter"] = new Microsoft.Extensions.Primitives.StringValues(new string?[] { null })
+        });
+        var helper = new SortableColumnTagHelper
+        {
+            Name = "Title",
+            ViewContext = new ViewContext
+            {
+                HttpContext = httpContext,
+                RouteData = new RouteData(),
+                ActionDescriptor = new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()
+            }
+        };
+        var (context, output) = CreateContext();
+
+        helper.Process(context, output);
+
+        Assert.Contains("filter=", output.Content.GetContent());
+    }
+
+    [Fact]
     public void Process_PreservesOtherQueryParams()
     {
         var helper = BuildHelper("Title", query: new() { ["page"] = "2", ["q"] = "wizard" });
