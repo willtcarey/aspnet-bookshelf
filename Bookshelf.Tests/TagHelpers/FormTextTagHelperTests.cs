@@ -148,6 +148,25 @@ public class FormTextTagHelperTests
         Assert.Equal(TagMode.StartTagAndEndTag, output.TagMode);
     }
 
+    [Fact]
+    public void Process_RendersFieldsetViaBaseRenderContent()
+    {
+        // Exercises FormTagHelperBase.Process AND the default RenderContent
+        // implementation (FormTextTagHelper doesn't override RenderContent).
+        var helper = BuildHelper(modelType: typeof(string));
+        var output = new TagHelperOutput(
+            "form-text",
+            new TagHelperAttributeList(),
+            (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+
+        helper.Process(
+            new TagHelperContext("form-text", new TagHelperAttributeList(), new Dictionary<object, object>(), "x"),
+            output);
+
+        Assert.Equal("fieldset", output.TagName);
+        Assert.Equal(TagMode.StartTagAndEndTag, output.TagMode);
+    }
+
     private static FormTextTagHelper BuildHelper(
         Type modelType,
         string? dataTypeName = null,

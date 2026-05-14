@@ -96,4 +96,43 @@ public class AdminBooksControllerTests : IDisposable
         Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("New", (await _context.Books.FindAsync(book.Id))!.Title);
     }
+
+    [Fact]
+    public async Task Index_ExercisesGetBaseQueryAndDefaultSort()
+    {
+        var (_, author) = await SeedAuthorWithUser();
+        _context.Books.Add(new BookBuilder().WithTitle("Charlie").WithAuthorId(author.Id).Build());
+        _context.Books.Add(new BookBuilder().WithTitle("Alpha").WithAuthorId(author.Id).Build());
+        await _context.SaveChangesAsync();
+
+        var view = Assert.IsType<ViewResult>(await _controller.Index());
+
+        Assert.NotNull(view.Model);
+    }
+
+    [Fact]
+    public async Task Index_ExercisesSortMapTitle()
+    {
+        var (_, author) = await SeedAuthorWithUser();
+        _context.Books.Add(new BookBuilder().WithTitle("Charlie").WithAuthorId(author.Id).Build());
+        _context.Books.Add(new BookBuilder().WithTitle("Alpha").WithAuthorId(author.Id).Build());
+        await _context.SaveChangesAsync();
+
+        var view = Assert.IsType<ViewResult>(await _controller.Index(sort: "title", dir: "asc"));
+
+        Assert.NotNull(view.Model);
+    }
+
+    [Fact]
+    public async Task Delete_Get_ExercisesGetBaseQuery()
+    {
+        var (_, author) = await SeedAuthorWithUser();
+        var book = new BookBuilder().WithAuthorId(author.Id).Build();
+        _context.Books.Add(book);
+        await _context.SaveChangesAsync();
+
+        var view = Assert.IsType<ViewResult>(await _controller.Delete(book.Id));
+
+        Assert.IsType<Bookshelf.Models.Book>(view.Model);
+    }
 }
