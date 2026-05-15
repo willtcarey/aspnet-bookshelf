@@ -24,3 +24,10 @@ interaction:
     description: Run a dotnet command
     service: web
     command: dotnet
+
+  test:
+    description: Run the .NET test suite
+    service: web
+    command: dotnet test Bookshelf.Tests/Bookshelf.Tests.csproj
+    compose:
+      run_options: [no-deps]

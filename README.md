@@ -43,10 +43,10 @@ Bookshelf lets users:
 
 ## Running tests
 
-Tests live in the `Bookshelf.Tests` project and run inside the `web` container so the toolchain matches dev and (eventually) CI.
+Tests live in the `Bookshelf.Tests` project and run inside the `web` container via Dip so the toolchain matches dev and (eventually) CI.
 
 ```sh
-make test
+dip test
 ```
 
-That wraps `docker compose run --rm --no-deps -w /app web dotnet test Bookshelf.sln`. Use `make test-watch` for the `dotnet watch` variant during local iteration.
+That runs `dotnet test Bookshelf.Tests/Bookshelf.Tests.csproj` in the `web` container without starting dependencies.
