@@ -3,12 +3,11 @@ using Bookshelf.Repositories;
 using Bookshelf.Tests.Builders;
 using Bookshelf.Tests.TestSupport;
 using Bookshelf.ViewModels;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookshelf.Tests.Repositories;
 
-public class AuthorRepositoryTests : IDisposable
+public sealed class AuthorRepositoryTests : IDisposable
 {
     private const string CurrentUserId = RepositoryTestContext.DefaultUserId;
     private const string OtherUserId = "other-user-id";
@@ -20,24 +19,22 @@ public class AuthorRepositoryTests : IDisposable
     private AuthorRepository BuildRepository() =>
         new(_context, RepositoryTestContext.AccessorFor(CurrentUserId));
 
-    private static ModelStateDictionary NewModelState() => new();
-
     [Fact]
-    public void Ctor_NullHttpContext_Throws()
+    public void CtorNullHttpContextThrows()
     {
         Assert.Throws<InvalidOperationException>(
             () => new AuthorRepository(_context, RepositoryTestContext.AccessorWithoutHttpContext()));
     }
 
     [Fact]
-    public void Ctor_NoUserIdClaim_Throws()
+    public void CtorNoUserIdClaimThrows()
     {
         Assert.Throws<InvalidOperationException>(
             () => new AuthorRepository(_context, RepositoryTestContext.AccessorWithoutUserClaim()));
     }
 
     [Fact]
-    public async Task ListAsync_ReturnsOnlyCurrentUserAuthors()
+    public async Task ListAsyncReturnsOnlyCurrentUserAuthors()
     {
         _context.Authors.Add(new AuthorBuilder().WithName("Mine").WithUserId(CurrentUserId).Build());
         _context.Authors.Add(new AuthorBuilder().WithName("Theirs").WithUserId(OtherUserId).Build());
@@ -50,7 +47,7 @@ public class AuthorRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindAsync_OwnedAuthor_ReturnsAuthor()
+    public async Task FindAsyncOwnedAuthorReturnsAuthor()
     {
         var author = new AuthorBuilder().WithName("Mine").WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
@@ -63,7 +60,7 @@ public class AuthorRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindAsync_OtherUserAuthor_ReturnsNull()
+    public async Task FindAsyncOtherUserAuthorReturnsNull()
     {
         var author = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(author);
@@ -75,7 +72,7 @@ public class AuthorRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindWithBooksAsync_OwnedAuthor_LoadsBooks()
+    public async Task FindWithBooksAsyncOwnedAuthorLoadsBooks()
     {
         var author = new AuthorBuilder().WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
@@ -90,7 +87,7 @@ public class AuthorRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindWithBooksAsync_OtherUserAuthor_ReturnsNull()
+    public async Task FindWithBooksAsyncOtherUserAuthorReturnsNull()
     {
         var author = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(author);
@@ -102,51 +99,78 @@ public class AuthorRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateAsync_PersistsAuthorScopedToCurrentUser()
+    public async Task CreateAsyncPersistsAuthorScopedToCurrentUser()
     {
-        var result = await BuildRepository().CreateAsync(new AuthorFormViewModel { Name = "Ursula" }, NewModelState());
+        var result = await BuildRepository().CreateAsync(new AuthorFormViewModel { Name = "Ursula" });
 
-        Assert.Equal(RepositoryResult.Success, result);
+        Assert.True(result.Succeeded);
         var saved = Assert.Single(_context.Authors);
         Assert.Equal("Ursula", saved.Name);
         Assert.Equal(CurrentUserId, saved.UserId);
     }
 
     [Fact]
-    public async Task UpdateAsync_AuthorNotFound_ReturnsNotFound()
+    public async Task CreateAsyncDuplicateNameReturnsValidationFailed()
     {
-        var result = await BuildRepository().UpdateAsync(id: 999, new AuthorFormViewModel { Name = "X" }, NewModelState());
+        _context.Authors.Add(new AuthorBuilder().WithName("Ursula").WithUserId(CurrentUserId).Build());
+        await _context.SaveChangesAsync();
 
-        Assert.Equal(RepositoryResult.NotFound, result);
+        var result = await BuildRepository().CreateAsync(new AuthorFormViewModel { Name = "Ursula" });
+
+        Assert.False(result.Succeeded);
+        Assert.True(result.HasValidationErrors);
+        Assert.Equal(nameof(AuthorFormViewModel.Name), result.ValidationErrors[0].Key);
     }
 
     [Fact]
-    public async Task UpdateAsync_AuthorOwnedByOtherUser_ReturnsNotFound()
+    public async Task UpdateAsyncAuthorNotFoundReturnsNotFound()
+    {
+        var result = await BuildRepository().UpdateAsync(id: 999, new AuthorFormViewModel { Name = "X" });
+
+        Assert.True(result.IsNotFound);
+    }
+
+    [Fact]
+    public async Task UpdateAsyncAuthorOwnedByOtherUserReturnsNotFound()
     {
         var author = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(author);
         await _context.SaveChangesAsync();
 
-        var result = await BuildRepository().UpdateAsync(author.Id, new AuthorFormViewModel { Name = "X" }, NewModelState());
+        var result = await BuildRepository().UpdateAsync(author.Id, new AuthorFormViewModel { Name = "X" });
 
-        Assert.Equal(RepositoryResult.NotFound, result);
+        Assert.True(result.IsNotFound);
     }
 
     [Fact]
-    public async Task UpdateAsync_HappyPath_PersistsRename()
+    public async Task UpdateAsyncDuplicateNameReturnsValidationFailed()
+    {
+        _context.Authors.Add(new AuthorBuilder().WithName("Existing").WithUserId(CurrentUserId).Build());
+        var author = new AuthorBuilder().WithName("Old").WithUserId(CurrentUserId).Build();
+        _context.Authors.Add(author);
+        await _context.SaveChangesAsync();
+
+        var result = await BuildRepository().UpdateAsync(author.Id, new AuthorFormViewModel { Name = "Existing" });
+
+        Assert.False(result.Succeeded);
+        Assert.True(result.HasValidationErrors);
+    }
+
+    [Fact]
+    public async Task UpdateAsyncHappyPathPersistsRename()
     {
         var author = new AuthorBuilder().WithName("Old").WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
         await _context.SaveChangesAsync();
 
-        var result = await BuildRepository().UpdateAsync(author.Id, new AuthorFormViewModel { Name = "New" }, NewModelState());
+        var result = await BuildRepository().UpdateAsync(author.Id, new AuthorFormViewModel { Name = "New" });
 
-        Assert.Equal(RepositoryResult.Success, result);
+        Assert.True(result.Succeeded);
         Assert.Equal("New", (await _context.Authors.FindAsync(author.Id))!.Name);
     }
 
     [Fact]
-    public async Task UpdateAsync_ConcurrencyException_AuthorRemoved_ReturnsNotFound()
+    public async Task UpdateAsyncConcurrencyExceptionAuthorRemovedReturnsNotFound()
     {
         var dbName = Guid.NewGuid().ToString();
         using var setupContext = RepositoryTestContext.CreateDbContext(dbName);
@@ -168,13 +192,13 @@ public class AuthorRepositoryTests : IDisposable
             await sideContext.SaveChangesAsync();
         };
 
-        var result = await repository.UpdateAsync(author.Id, new AuthorFormViewModel { Name = "New" }, NewModelState());
+        var result = await repository.UpdateAsync(author.Id, new AuthorFormViewModel { Name = "New" });
 
-        Assert.Equal(RepositoryResult.NotFound, result);
+        Assert.True(result.IsNotFound);
     }
 
     [Fact]
-    public async Task UpdateAsync_ConcurrencyException_AuthorStillExists_Rethrows()
+    public async Task UpdateAsyncConcurrencyExceptionAuthorStillExistsRethrows()
     {
         var dbName = Guid.NewGuid().ToString();
         using var setupContext = RepositoryTestContext.CreateDbContext(dbName);
@@ -190,11 +214,11 @@ public class AuthorRepositoryTests : IDisposable
         throwing.ShouldThrowOnSave = true;
 
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
-            () => repository.UpdateAsync(author.Id, new AuthorFormViewModel { Name = "New" }, NewModelState()));
+            () => repository.UpdateAsync(author.Id, new AuthorFormViewModel { Name = "New" }));
     }
 
     [Fact]
-    public async Task Remove_MarksAuthorForDeletion()
+    public async Task RemoveMarksAuthorForDeletion()
     {
         var author = new AuthorBuilder().WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);

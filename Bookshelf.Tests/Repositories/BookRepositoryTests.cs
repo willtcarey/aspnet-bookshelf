@@ -3,11 +3,10 @@ using Bookshelf.Repositories;
 using Bookshelf.Tests.Builders;
 using Bookshelf.Tests.TestSupport;
 using Bookshelf.ViewModels;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Bookshelf.Tests.Repositories;
 
-public class BookRepositoryTests : IDisposable
+public sealed class BookRepositoryTests : IDisposable
 {
     private const string CurrentUserId = RepositoryTestContext.DefaultUserId;
     private const string OtherUserId = "other-user-id";
@@ -19,24 +18,22 @@ public class BookRepositoryTests : IDisposable
     private BookRepository BuildRepository() =>
         new(_context, RepositoryTestContext.AccessorFor(CurrentUserId));
 
-    private static ModelStateDictionary NewModelState() => new();
-
     [Fact]
-    public void Ctor_NullHttpContext_Throws()
+    public void CtorNullHttpContextThrows()
     {
         Assert.Throws<InvalidOperationException>(
             () => new BookRepository(_context, RepositoryTestContext.AccessorWithoutHttpContext()));
     }
 
     [Fact]
-    public void Ctor_NoUserIdClaim_Throws()
+    public void CtorNoUserIdClaimThrows()
     {
         Assert.Throws<InvalidOperationException>(
             () => new BookRepository(_context, RepositoryTestContext.AccessorWithoutUserClaim()));
     }
 
     [Fact]
-    public async Task ListAsync_ReturnsOnlyBooksOwnedByCurrentUserAuthor()
+    public async Task ListAsyncReturnsOnlyBooksOwnedByCurrentUserAuthor()
     {
         var mineAuthor = new AuthorBuilder().WithName("Mine").WithUserId(CurrentUserId).Build();
         var theirsAuthor = new AuthorBuilder().WithName("Theirs").WithUserId(OtherUserId).Build();
@@ -54,7 +51,7 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindAsync_OwnedBook_ReturnsBook()
+    public async Task FindAsyncOwnedBookReturnsBook()
     {
         var author = new AuthorBuilder().WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
@@ -69,7 +66,7 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindAsync_OtherUserBook_ReturnsNull()
+    public async Task FindAsyncOtherUserBookReturnsNull()
     {
         var author = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(author);
@@ -84,7 +81,7 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindWithAuthorAsync_OwnedBook_LoadsAuthor()
+    public async Task FindWithAuthorAsyncOwnedBookLoadsAuthor()
     {
         var author = new AuthorBuilder().WithName("Ursula").WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
@@ -100,7 +97,7 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task FindWithAuthorAsync_OtherUserBook_ReturnsNull()
+    public async Task FindWithAuthorAsyncOtherUserBookReturnsNull()
     {
         var author = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(author);
@@ -115,52 +112,49 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateAsync_AuthorNotOwned_ReturnsValidationFailedAndAddsModelError()
+    public async Task CreateAsyncAuthorNotOwnedReturnsValidationFailed()
     {
         var foreignAuthor = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(foreignAuthor);
         await _context.SaveChangesAsync();
-        var modelState = NewModelState();
 
         var result = await BuildRepository().CreateAsync(
-            new BookFormViewModel { Title = "X", AuthorId = foreignAuthor.Id },
-            modelState);
+            new BookFormViewModel { Title = "X", AuthorId = foreignAuthor.Id });
 
-        Assert.Equal(RepositoryResult.ValidationFailed, result);
-        Assert.True(modelState.ContainsKey(nameof(BookFormViewModel.AuthorId)));
+        Assert.False(result.Succeeded);
+        Assert.True(result.HasValidationErrors);
+        Assert.Equal(nameof(BookFormViewModel.AuthorId), result.ValidationErrors[0].Key);
         Assert.Empty(_context.Books);
     }
 
     [Fact]
-    public async Task CreateAsync_AuthorOwned_PersistsBook()
+    public async Task CreateAsyncAuthorOwnedPersistsBook()
     {
         var author = new AuthorBuilder().WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
         await _context.SaveChangesAsync();
 
         var result = await BuildRepository().CreateAsync(
-            new BookFormViewModel { Title = "A Wizard of Earthsea", AuthorId = author.Id, Year = 1968 },
-            NewModelState());
+            new BookFormViewModel { Title = "A Wizard of Earthsea", AuthorId = author.Id, Year = 1968 });
 
-        Assert.Equal(RepositoryResult.Success, result);
+        Assert.True(result.Succeeded);
         var saved = Assert.Single(_context.Books);
         Assert.Equal("A Wizard of Earthsea", saved.Title);
         Assert.Equal(author.Id, saved.AuthorId);
     }
 
     [Fact]
-    public async Task UpdateAsync_BookNotFound_ReturnsNotFound()
+    public async Task UpdateAsyncBookNotFoundReturnsNotFound()
     {
         var result = await BuildRepository().UpdateAsync(
             id: 999,
-            new BookFormViewModel { Title = "X", AuthorId = 1 },
-            NewModelState());
+            new BookFormViewModel { Title = "X", AuthorId = 1 });
 
-        Assert.Equal(RepositoryResult.NotFound, result);
+        Assert.True(result.IsNotFound);
     }
 
     [Fact]
-    public async Task UpdateAsync_BookOwnedByOtherUser_ReturnsNotFound()
+    public async Task UpdateAsyncBookOwnedByOtherUserReturnsNotFound()
     {
         var foreignAuthor = new AuthorBuilder().WithUserId(OtherUserId).Build();
         _context.Authors.Add(foreignAuthor);
@@ -171,14 +165,13 @@ public class BookRepositoryTests : IDisposable
 
         var result = await BuildRepository().UpdateAsync(
             book.Id,
-            new BookFormViewModel { Title = "X", AuthorId = foreignAuthor.Id },
-            NewModelState());
+            new BookFormViewModel { Title = "X", AuthorId = foreignAuthor.Id });
 
-        Assert.Equal(RepositoryResult.NotFound, result);
+        Assert.True(result.IsNotFound);
     }
 
     [Fact]
-    public async Task UpdateAsync_AuthorReassignmentNotOwned_ReturnsValidationFailed()
+    public async Task UpdateAsyncAuthorReassignmentNotOwnedReturnsValidationFailed()
     {
         var mineAuthor = new AuthorBuilder().WithName("Mine").WithUserId(CurrentUserId).Build();
         var foreignAuthor = new AuthorBuilder().WithName("Theirs").WithUserId(OtherUserId).Build();
@@ -187,19 +180,17 @@ public class BookRepositoryTests : IDisposable
         var book = new BookBuilder().WithAuthorId(mineAuthor.Id).Build();
         _context.Books.Add(book);
         await _context.SaveChangesAsync();
-        var modelState = NewModelState();
 
         var result = await BuildRepository().UpdateAsync(
             book.Id,
-            new BookFormViewModel { Title = "X", AuthorId = foreignAuthor.Id },
-            modelState);
+            new BookFormViewModel { Title = "X", AuthorId = foreignAuthor.Id });
 
-        Assert.Equal(RepositoryResult.ValidationFailed, result);
-        Assert.True(modelState.ContainsKey(nameof(BookFormViewModel.AuthorId)));
+        Assert.False(result.Succeeded);
+        Assert.True(result.HasValidationErrors);
     }
 
     [Fact]
-    public async Task UpdateAsync_HappyPath_PersistsChanges()
+    public async Task UpdateAsyncHappyPathPersistsChanges()
     {
         var author = new AuthorBuilder().WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
@@ -210,17 +201,16 @@ public class BookRepositoryTests : IDisposable
 
         var result = await BuildRepository().UpdateAsync(
             book.Id,
-            new BookFormViewModel { Title = "New", AuthorId = author.Id, Year = 2026 },
-            NewModelState());
+            new BookFormViewModel { Title = "New", AuthorId = author.Id, Year = 2026 });
 
-        Assert.Equal(RepositoryResult.Success, result);
+        Assert.True(result.Succeeded);
         var refreshed = await _context.Books.FindAsync(book.Id);
         Assert.Equal("New", refreshed!.Title);
         Assert.Equal(2026, refreshed.Year);
     }
 
     [Fact]
-    public async Task Remove_MarksBookForDeletion()
+    public async Task RemoveMarksBookForDeletion()
     {
         var author = new AuthorBuilder().WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
@@ -237,7 +227,7 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task BuildAuthorsSelectListAsync_ReturnsOnlyCurrentUserAuthorsOrderedByName()
+    public async Task BuildAuthorsSelectListAsyncReturnsOnlyCurrentUserAuthorsOrderedByName()
     {
         _context.Authors.Add(new AuthorBuilder().WithName("Charlie").WithUserId(CurrentUserId).Build());
         _context.Authors.Add(new AuthorBuilder().WithName("Alpha").WithUserId(CurrentUserId).Build());
@@ -253,7 +243,7 @@ public class BookRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task BuildAuthorsSelectListAsync_WithSelectedId_MarksSelected()
+    public async Task BuildAuthorsSelectListAsyncWithSelectedIdMarksSelected()
     {
         var author = new AuthorBuilder().WithName("Alpha").WithUserId(CurrentUserId).Build();
         _context.Authors.Add(author);
