@@ -9,7 +9,7 @@ namespace Bookshelf.Tests.TagHelpers;
 public class SortableColumnTagHelperTests
 {
     [Fact]
-    public void Process_RendersThElement()
+    public void ProcessRendersThElement()
     {
         var helper = BuildHelper("Title");
         var (context, output) = CreateContext();
@@ -21,7 +21,7 @@ public class SortableColumnTagHelperTests
     }
 
     [Fact]
-    public void Process_NotCurrentSort_BuildsAscLinkAndNoArrow()
+    public void ProcessNotCurrentSortBuildsAscLinkAndNoArrow()
     {
         var helper = BuildHelper("Title", currentSort: "Year", currentDirection: "asc");
         var (context, output) = CreateContext();
@@ -29,14 +29,14 @@ public class SortableColumnTagHelperTests
         helper.Process(context, output);
 
         var html = output.Content.GetContent();
-        Assert.Contains("sort=Title", html);
-        Assert.Contains("dir=asc", html);
-        Assert.DoesNotContain("▲", html);
-        Assert.DoesNotContain("▼", html);
+        Assert.Contains("sort=Title", html, StringComparison.Ordinal);
+        Assert.Contains("dir=asc", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("▲", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("▼", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_CurrentSortAsc_FlipsToDescAndRendersUpArrow()
+    public void ProcessCurrentSortAscFlipsToDescAndRendersUpArrow()
     {
         var helper = BuildHelper("Title", currentSort: "Title", currentDirection: "asc");
         var (context, output) = CreateContext();
@@ -44,12 +44,12 @@ public class SortableColumnTagHelperTests
         helper.Process(context, output);
 
         var html = output.Content.GetContent();
-        Assert.Contains("dir=desc", html);
-        Assert.Contains("▲", html);
+        Assert.Contains("dir=desc", html, StringComparison.Ordinal);
+        Assert.Contains("▲", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_CurrentSortDesc_FlipsToAscAndRendersDownArrow()
+    public void ProcessCurrentSortDescFlipsToAscAndRendersDownArrow()
     {
         var helper = BuildHelper("Title", currentSort: "Title", currentDirection: "desc");
         var (context, output) = CreateContext();
@@ -57,23 +57,23 @@ public class SortableColumnTagHelperTests
         helper.Process(context, output);
 
         var html = output.Content.GetContent();
-        Assert.Contains("dir=asc", html);
-        Assert.Contains("▼", html);
+        Assert.Contains("dir=asc", html, StringComparison.Ordinal);
+        Assert.Contains("▼", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_SortMatchesCaseInsensitively_TreatsAsActive()
+    public void ProcessSortMatchesCaseInsensitivelyTreatsAsActive()
     {
         var helper = BuildHelper("Title", currentSort: "title", currentDirection: "asc");
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.Contains("dir=desc", output.Content.GetContent());
+        Assert.Contains("dir=desc", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_QueryParamWithNullValue_EmitsEmptyString()
+    public void ProcessQueryParamWithNullValueEmitsEmptyString()
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Query = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
@@ -94,11 +94,11 @@ public class SortableColumnTagHelperTests
 
         helper.Process(context, output);
 
-        Assert.Contains("filter=", output.Content.GetContent());
+        Assert.Contains("filter=", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_PreservesOtherQueryParams()
+    public void ProcessPreservesOtherQueryParams()
     {
         var helper = BuildHelper("Title", query: new() { ["page"] = "2", ["q"] = "wizard" });
         var (context, output) = CreateContext();
@@ -106,12 +106,12 @@ public class SortableColumnTagHelperTests
         helper.Process(context, output);
 
         var html = output.Content.GetContent();
-        Assert.Contains("page=2", html);
-        Assert.Contains("q=wizard", html);
+        Assert.Contains("page=2", html, StringComparison.Ordinal);
+        Assert.Contains("q=wizard", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_StripsExistingSortAndDirParams()
+    public void ProcessStripsExistingSortAndDirParams()
     {
         var helper = BuildHelper("Title", query: new() { ["sort"] = "Year", ["dir"] = "desc", ["page"] = "1" });
         var (context, output) = CreateContext();
@@ -124,7 +124,7 @@ public class SortableColumnTagHelperTests
     }
 
     [Fact]
-    public void Process_StripsSortAndDirCaseInsensitively()
+    public void ProcessStripsSortAndDirCaseInsensitively()
     {
         var helper = BuildHelper("Title", query: new() { ["SORT"] = "Year", ["DIR"] = "desc" });
         var (context, output) = CreateContext();
@@ -137,36 +137,36 @@ public class SortableColumnTagHelperTests
     }
 
     [Fact]
-    public void Process_UriEscapesSortName()
+    public void ProcessUriEscapesSortName()
     {
         var helper = BuildHelper("My Column");
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.Contains("sort=My%20Column", output.Content.GetContent());
+        Assert.Contains("sort=My%20Column", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_WithoutChildContent_UsesNameAsLabel()
+    public void ProcessWithoutChildContentUsesNameAsLabel()
     {
         var helper = BuildHelper("Title");
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.Contains(">Title", output.Content.GetContent());
+        Assert.Contains(">Title", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_WithChildContent_UsesChildAsLabel()
+    public void ProcessWithChildContentUsesChildAsLabel()
     {
         var helper = BuildHelper("Title");
         var (context, output) = CreateContext(childContent: "Book Title");
 
         helper.Process(context, output);
 
-        Assert.Contains(">Book Title", output.Content.GetContent());
+        Assert.Contains(">Book Title", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     private static SortableColumnTagHelper BuildHelper(

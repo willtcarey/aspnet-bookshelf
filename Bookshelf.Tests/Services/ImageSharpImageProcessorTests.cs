@@ -10,14 +10,14 @@ public class ImageSharpImageProcessorTests
     private readonly ImageSharpImageProcessor _processor = new();
 
     [Fact]
-    public async Task ResizeAsync_NullSource_Throws()
+    public async Task ResizeAsyncNullSourceThrows()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(
             () => _processor.ResizeAsync(null!, 100, 100));
     }
 
     [Fact]
-    public async Task ResizeAsync_NonPositiveWidth_Throws()
+    public async Task ResizeAsyncNonPositiveWidthThrows()
     {
         await using var source = await BuildPngStream(50, 50);
 
@@ -26,7 +26,7 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public async Task ResizeAsync_NonPositiveHeight_Throws()
+    public async Task ResizeAsyncNonPositiveHeightThrows()
     {
         await using var source = await BuildPngStream(50, 50);
 
@@ -35,7 +35,7 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public async Task ResizeAsync_ValidImage_ReturnsResizedStream()
+    public async Task ResizeAsyncValidImageReturnsResizedStream()
     {
         await using var source = await BuildPngStream(400, 200);
 
@@ -47,7 +47,7 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public async Task ResizeAsync_ImageSmallerThanTarget_DoesNotResize()
+    public async Task ResizeAsyncImageSmallerThanTargetDoesNotResize()
     {
         await using var source = await BuildPngStream(50, 50);
 
@@ -59,7 +59,7 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public async Task ResizeAsync_JpgFormat_EncodesAsJpeg()
+    public async Task ResizeAsyncJpgFormatEncodesAsJpeg()
     {
         await using var source = await BuildPngStream(400, 200);
 
@@ -70,7 +70,7 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public async Task ResizeAsync_DefaultFormat_EncodesAsWebp()
+    public async Task ResizeAsyncDefaultFormatEncodesAsWebp()
     {
         await using var source = await BuildPngStream(400, 200);
 
@@ -81,25 +81,25 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public void NormalizeFormat_KnownAlias_ReturnsCanonical()
+    public void NormalizeFormatKnownAliasReturnsCanonical()
     {
         Assert.Equal("jpg", ImageSharpImageProcessor.NormalizeFormat("JPEG"));
     }
 
     [Fact]
-    public void NormalizeFormat_UnknownFormat_ReturnsWebpDefault()
+    public void NormalizeFormatUnknownFormatReturnsWebpDefault()
     {
         Assert.Equal("webp", ImageSharpImageProcessor.NormalizeFormat("tiff"));
     }
 
     [Fact]
-    public void NormalizeFormat_NullFormat_ReturnsWebpDefault()
+    public void NormalizeFormatNullFormatReturnsWebpDefault()
     {
         Assert.Equal("webp", ImageSharpImageProcessor.NormalizeFormat(null));
     }
 
     [Fact]
-    public void NormalizeFormat_JpgFormat_ReturnsJpg()
+    public void NormalizeFormatJpgFormatReturnsJpg()
     {
         Assert.Equal("jpg", ImageSharpImageProcessor.NormalizeFormat("jpg"));
     }

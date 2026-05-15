@@ -3,7 +3,7 @@ using Bookshelf.Tests.TestSupport;
 
 namespace Bookshelf.Tests.Services;
 
-public class UploadStoragePathsTests : IDisposable
+public sealed class UploadStoragePathsTests : IDisposable
 {
     private readonly string _root;
 
@@ -22,7 +22,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void Constructor_UsesWebRootPathWhenSet()
+    public void ConstructorUsesWebRootPathWhenSet()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -30,7 +30,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void Constructor_FallsBackToContentRootWwwrootWhenWebRootEmpty()
+    public void ConstructorFallsBackToContentRootWwwrootWhenWebRootEmpty()
     {
         var paths = TestUploadPaths.Create(webRoot: "", contentRoot: _root);
 
@@ -38,7 +38,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_BlankInput_ReturnsNull()
+    public void NormalizeStoredPathBlankInputReturnsNull()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -46,7 +46,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_NullByteInPath_ReturnsNull()
+    public void NormalizeStoredPathNullByteInPathReturnsNull()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -54,7 +54,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_NotInUploadsRoot_ReturnsNull()
+    public void NormalizeStoredPathNotInUploadsRootReturnsNull()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -62,7 +62,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_DotFileName_ReturnsNull()
+    public void NormalizeStoredPathDotFileNameReturnsNull()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -70,7 +70,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_NestedPath_ReturnsNull()
+    public void NormalizeStoredPathNestedPathReturnsNull()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -78,7 +78,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_ValidPath_ReturnsCanonicalLeadingSlashForm()
+    public void NormalizeStoredPathValidPathReturnsCanonicalLeadingSlashForm()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -86,7 +86,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeStoredPath_BackslashesAndUriEncoded_NormalizesAndDecodes()
+    public void NormalizeStoredPathBackslashesAndUriEncodedNormalizesAndDecodes()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -94,7 +94,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void ResolveUploadAbsolutePath_ValidPath_ReturnsCombinedFilesystemPath()
+    public void ResolveUploadAbsolutePathValidPathReturnsCombinedFilesystemPath()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -104,7 +104,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void ResolveUploadAbsolutePath_InvalidPath_Throws()
+    public void ResolveUploadAbsolutePathInvalidPathThrows()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -112,57 +112,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void BuildCachePath_BothDimensions_BuildsWidthByHeightFolder()
-    {
-        var paths = TestUploadPaths.Create(webRoot: _root);
-
-        var cachePath = paths.BuildCachePath("/uploads/cover.png", 100, 200, ".webp");
-
-        Assert.Equal(Path.Combine(paths.CacheRootPath, "100x200", "cover.webp"), cachePath);
-    }
-
-    [Fact]
-    public void BuildCachePath_WidthOnly_UsesAutoForHeight()
-    {
-        var paths = TestUploadPaths.Create(webRoot: _root);
-
-        var cachePath = paths.BuildCachePath("/uploads/cover.png", 100, null, ".webp");
-
-        Assert.Equal(Path.Combine(paths.CacheRootPath, "100xauto", "cover.webp"), cachePath);
-    }
-
-    [Fact]
-    public void BuildCachePath_HeightOnly_UsesAutoForWidth()
-    {
-        var paths = TestUploadPaths.Create(webRoot: _root);
-
-        var cachePath = paths.BuildCachePath("/uploads/cover.png", null, 200, ".webp");
-
-        Assert.Equal(Path.Combine(paths.CacheRootPath, "autox200", "cover.webp"), cachePath);
-    }
-
-    [Fact]
-    public void BuildCachePath_BothNull_UsesAutoForBoth()
-    {
-        var paths = TestUploadPaths.Create(webRoot: _root);
-
-        var cachePath = paths.BuildCachePath("/uploads/cover.png", null, null, ".webp");
-
-        Assert.Equal(Path.Combine(paths.CacheRootPath, "autoxauto", "cover.webp"), cachePath);
-    }
-
-    [Fact]
-    public void BuildCachePath_PreservesFilenameAndAppliesExtension()
-    {
-        var paths = TestUploadPaths.Create(webRoot: _root);
-
-        var cachePath = paths.BuildCachePath("/uploads/photo.jpg", 100, 200, ".webp");
-
-        Assert.EndsWith("photo.webp", cachePath);
-    }
-
-    [Fact]
-    public void EnumerateCacheVariantPaths_PathInvalid_ReturnsEmpty()
+    public void EnumerateCacheVariantPathsPathInvalidReturnsEmpty()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -170,7 +120,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void EnumerateCacheVariantPaths_CacheRootMissing_ReturnsEmpty()
+    public void EnumerateCacheVariantPathsCacheRootMissingReturnsEmpty()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
 
@@ -178,7 +128,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void EnumerateCacheVariantPaths_NoVariantDirectories_ReturnsEmpty()
+    public void EnumerateCacheVariantPathsNoVariantDirectoriesReturnsEmpty()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
         Directory.CreateDirectory(paths.CacheRootPath);
@@ -187,7 +137,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void EnumerateCacheVariantPaths_FindsVariantsAcrossFolders()
+    public void EnumerateCacheVariantPathsFindsVariantsAcrossFolders()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
         Directory.CreateDirectory(Path.Combine(paths.CacheRootPath, "100x200"));
@@ -204,7 +154,7 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void EnumerateCacheVariantPaths_DoesNotIncludeUnrelatedFiles()
+    public void EnumerateCacheVariantPathsDoesNotIncludeUnrelatedFiles()
     {
         var paths = TestUploadPaths.Create(webRoot: _root);
         Directory.CreateDirectory(Path.Combine(paths.CacheRootPath, "100x200"));
@@ -217,19 +167,19 @@ public class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeUploadsPath_BlankInput_ReturnsDefault()
+    public void NormalizeUploadsPathBlankInputReturnsDefault()
     {
         Assert.Equal("uploads", UploadStoragePaths.NormalizeUploadsPath(null));
     }
 
     [Fact]
-    public void NormalizeUploadsPath_OnlySlashes_ReturnsDefault()
+    public void NormalizeUploadsPathOnlySlashesReturnsDefault()
     {
         Assert.Equal("uploads", UploadStoragePaths.NormalizeUploadsPath("///"));
     }
 
     [Fact]
-    public void NormalizeUploadsPath_StripsSlashesAndConvertsBackslashes()
+    public void NormalizeUploadsPathStripsSlashesAndConvertsBackslashes()
     {
         Assert.Equal("media/files", UploadStoragePaths.NormalizeUploadsPath(@"\media\files\"));
     }

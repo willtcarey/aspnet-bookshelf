@@ -9,7 +9,7 @@ using Moq;
 
 namespace Bookshelf.Tests.Services;
 
-public class OrphanedUploadCleanupJobTests : IDisposable
+public sealed class OrphanedUploadCleanupJobTests : IDisposable
 {
     private readonly string _root;
     private readonly UploadStoragePaths _paths;
@@ -35,7 +35,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAsync_UploadRootMissing_ReturnsZeroCounts()
+    public async Task RunAsyncUploadRootMissingReturnsZeroCounts()
     {
         Directory.Delete(_paths.UploadRootPath, recursive: true);
         var job = BuildJob();
@@ -48,7 +48,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAsync_OrphanedFileOlderThanGracePeriod_IsDeleted()
+    public async Task RunAsyncOrphanedFileOlderThanGracePeriodIsDeleted()
     {
         var orphanPath = Path.Combine(_paths.UploadRootPath, "orphan.png");
         await File.WriteAllTextAsync(orphanPath, "x");
@@ -62,7 +62,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAsync_RecentFile_IsSkipped()
+    public async Task RunAsyncRecentFileIsSkipped()
     {
         var recentPath = Path.Combine(_paths.UploadRootPath, "recent.png");
         await File.WriteAllTextAsync(recentPath, "x");
@@ -76,7 +76,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAsync_FileReferencedByBook_IsNotDeleted()
+    public async Task RunAsyncFileReferencedByBookIsNotDeleted()
     {
         _dbContext.Books.Add(new BookBuilder()
             .WithId(1)
@@ -95,7 +95,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAsync_EmptyUploadDirectory_TracksZeroScanned()
+    public async Task RunAsyncEmptyUploadDirectoryTracksZeroScanned()
     {
         var job = BuildJob();
 
@@ -105,7 +105,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public void ResolveGracePeriod_ConfiguredPositive_UsesConfiguredMinutes()
+    public void ResolveGracePeriodConfiguredPositiveUsesConfiguredMinutes()
     {
         var job = BuildJob(gracePeriodMinutes: 5);
 
@@ -113,7 +113,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public void ResolveGracePeriod_ConfiguredNonPositiveOrMissing_ReturnsDefault()
+    public void ResolveGracePeriodConfiguredNonPositiveOrMissingReturnsDefault()
     {
         var job = BuildJob(gracePeriodMinutes: -5);
 
@@ -125,7 +125,7 @@ public class OrphanedUploadCleanupJobTests : IDisposable
         var configValues = new Dictionary<string, string?>();
         if (gracePeriodMinutes.HasValue)
         {
-            configValues["FileStorage:CleanupGracePeriodMinutes"] = gracePeriodMinutes.Value.ToString();
+            configValues["FileStorage:CleanupGracePeriodMinutes"] = gracePeriodMinutes.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configValues)

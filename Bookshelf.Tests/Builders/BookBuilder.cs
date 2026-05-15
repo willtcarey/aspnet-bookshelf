@@ -50,6 +50,7 @@ public class BookBuilder
 
     public BookBuilder WithAuthor(Author author)
     {
+        ArgumentNullException.ThrowIfNull(author);
         _author = author;
         _authorId = author.Id;
         return this;

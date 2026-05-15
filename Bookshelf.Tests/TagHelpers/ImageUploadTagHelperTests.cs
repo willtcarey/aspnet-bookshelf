@@ -1,14 +1,24 @@
+using Bookshelf.Services;
 using Bookshelf.TagHelpers;
+using Bookshelf.Tests.TestSupport;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Bookshelf.Tests.TagHelpers;
 
 public class ImageUploadTagHelperTests
 {
-    [Fact]
-    public void Process_BlankPath_SuppressesOutput()
+    private const string ValidStoredPath = "/uploads/11111111111111111111111111111111.png";
+
+    private static ImageStorage CreateImageStorage()
     {
-        var helper = new ImageUploadTagHelper { Path = "" };
+        var paths = TestUploadPaths.Create(Path.GetTempPath());
+        return new ImageStorage(paths);
+    }
+
+    [Fact]
+    public void ProcessBlankPathSuppressesOutput()
+    {
+        var helper = new ImageUploadTagHelper(CreateImageStorage()) { Path = "" };
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
@@ -17,9 +27,9 @@ public class ImageUploadTagHelperTests
     }
 
     [Fact]
-    public void Process_WithPath_RendersImgTag()
+    public void ProcessWithPathRendersImgTag()
     {
-        var helper = new ImageUploadTagHelper { Path = "uploads/cover.png" };
+        var helper = new ImageUploadTagHelper(CreateImageStorage()) { Path = ValidStoredPath };
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
@@ -29,9 +39,9 @@ public class ImageUploadTagHelperTests
     }
 
     [Fact]
-    public void Process_WithAlt_SetsAltAttribute()
+    public void ProcessWithAltSetsAltAttribute()
     {
-        var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Alt = "Cover" };
+        var helper = new ImageUploadTagHelper(CreateImageStorage()) { Path = ValidStoredPath, Alt = "Cover" };
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
@@ -40,9 +50,9 @@ public class ImageUploadTagHelperTests
     }
 
     [Fact]
-    public void Process_WithoutAlt_SetsEmptyAlt()
+    public void ProcessWithoutAltSetsEmptyAlt()
     {
-        var helper = new ImageUploadTagHelper { Path = "uploads/x.png" };
+        var helper = new ImageUploadTagHelper(CreateImageStorage()) { Path = ValidStoredPath };
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
@@ -51,43 +61,14 @@ public class ImageUploadTagHelperTests
     }
 
     [Fact]
-    public void BuildSource_NoQueryParams_OmitsQueryString()
+    public void ProcessInvalidPathSuppressesOutput()
     {
-        var helper = new ImageUploadTagHelper { Path = "uploads/cover.png" };
+        var helper = new ImageUploadTagHelper(CreateImageStorage()) { Path = "has/slash" };
+        var (context, output) = CreateContext();
 
-        Assert.Equal("/images/uploads/cover.png", helper.BuildSource());
-    }
+        helper.Process(context, output);
 
-    [Fact]
-    public void BuildSource_WithWidth_AddsWidthParam()
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Width = 100 };
-
-        Assert.Equal("/images/uploads/x.png?w=100", helper.BuildSource());
-    }
-
-    [Fact]
-    public void BuildSource_WithHeight_AddsHeightParam()
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Height = 200 };
-
-        Assert.Equal("/images/uploads/x.png?h=200", helper.BuildSource());
-    }
-
-    [Fact]
-    public void BuildSource_WithFormat_AddsFormatParam()
-    {
-        var helper = new ImageUploadTagHelper { Path = "uploads/x.png", Format = "webp" };
-
-        Assert.Equal("/images/uploads/x.png?format=webp", helper.BuildSource());
-    }
-
-    [Fact]
-    public void BuildSource_WithBackslashesInPath_NormalizesToForwardSlashes()
-    {
-        var helper = new ImageUploadTagHelper { Path = @"uploads\sub\cover.png" };
-
-        Assert.Equal("/images/uploads/sub/cover.png", helper.BuildSource());
+        Assert.Null(output.TagName);
     }
 
     private static (TagHelperContext context, TagHelperOutput output) CreateContext()

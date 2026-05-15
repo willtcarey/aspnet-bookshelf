@@ -33,11 +33,18 @@ public class AuthorBuilder
         return this;
     }
 
-    public Author Build() => new()
+    public Author Build()
     {
-        Id = _id,
-        Name = _name,
-        UserId = _userId,
-        Books = _books
-    };
+        var author = new Author
+        {
+            Id = _id,
+            Name = _name,
+            UserId = _userId
+        };
+        foreach (var book in _books)
+        {
+            author.Books.Add(book);
+        }
+        return author;
+    }
 }

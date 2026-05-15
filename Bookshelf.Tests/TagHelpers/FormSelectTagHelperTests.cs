@@ -4,7 +4,6 @@ using Bookshelf.Tests.TestSupport;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Moq;
 
 namespace Bookshelf.Tests.TagHelpers;
@@ -12,18 +11,18 @@ namespace Bookshelf.Tests.TagHelpers;
 public class FormSelectTagHelperTests
 {
     [Fact]
-    public void GenerateInput_NoPlaceholder_DoesNotPrependPlaceholderOption()
+    public void GenerateInputNoPlaceholderDoesNotPrependPlaceholderOption()
     {
         var generatedSelect = new TagBuilder("select");
         var helper = BuildHelper(generatedSelect, placeholder: null, modelValue: 5);
 
         helper.GenerateInput();
 
-        Assert.DoesNotContain("disabled", RenderInnerHtml(generatedSelect));
+        Assert.DoesNotContain("disabled", RenderInnerHtml(generatedSelect), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GenerateInput_WithPlaceholderAndNonBlankModel_PrependsButDoesNotSelectPlaceholder()
+    public void GenerateInputWithPlaceholderAndNonBlankModelPrependsButDoesNotSelectPlaceholder()
     {
         var generatedSelect = new TagBuilder("select");
         var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: 5);
@@ -31,23 +30,23 @@ public class FormSelectTagHelperTests
         helper.GenerateInput();
 
         var html = RenderInnerHtml(generatedSelect);
-        Assert.Contains("disabled", html);
-        Assert.DoesNotContain("selected", html);
+        Assert.Contains("disabled", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("selected", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GenerateInput_WithPlaceholderAndBlankModel_PrependsAndSelectsPlaceholder()
+    public void GenerateInputWithPlaceholderAndBlankModelPrependsAndSelectsPlaceholder()
     {
         var generatedSelect = new TagBuilder("select");
         var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: 0);
 
         helper.GenerateInput();
 
-        Assert.Contains("selected", RenderInnerHtml(generatedSelect));
+        Assert.Contains("selected", RenderInnerHtml(generatedSelect), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShouldSelectPlaceholder_ModelIsNullOrWhitespace_ReturnsTrue()
+    public void ShouldSelectPlaceholderModelIsNullOrWhitespaceReturnsTrue()
     {
         var helper = BuildHelper(new TagBuilder("select"), placeholder: "X", modelValue: null);
 
@@ -55,7 +54,7 @@ public class FormSelectTagHelperTests
     }
 
     [Fact]
-    public void ShouldSelectPlaceholder_ModelIsZero_ReturnsTrue()
+    public void ShouldSelectPlaceholderModelIsZeroReturnsTrue()
     {
         var helper = BuildHelper(new TagBuilder("select"), placeholder: "X", modelValue: "0");
 
@@ -63,7 +62,7 @@ public class FormSelectTagHelperTests
     }
 
     [Fact]
-    public void ShouldSelectPlaceholder_ModelIsNonBlankNonZero_ReturnsFalse()
+    public void ShouldSelectPlaceholderModelIsNonBlankNonZeroReturnsFalse()
     {
         var helper = BuildHelper(new TagBuilder("select"), placeholder: "X", modelValue: "hello");
 

@@ -1,4 +1,5 @@
 using System.Text.Encodings.Web;
+using Bookshelf.Services;
 using Bookshelf.TagHelpers;
 using Bookshelf.Tests.TestSupport;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -12,49 +13,54 @@ namespace Bookshelf.Tests.TagHelpers;
 public class FormFileTagHelperTests
 {
     [Fact]
-    public void Process_WithHint_RendersHintLabel()
+    public void ProcessWithHintRendersHintLabel()
     {
         var helper = BuildHelper(existingPath: null, hint: "Max 10 MB");
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.Contains("data-upload-hint", output.Content.GetContent());
+        Assert.Contains("data-upload-hint", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Process_WithoutHint_OmitsHintLabel()
+    public void ProcessWithoutHintOmitsHintLabel()
     {
         var helper = BuildHelper(existingPath: null, hint: null);
         var (context, output) = CreateContext();
 
         helper.Process(context, output);
 
-        Assert.DoesNotContain("data-upload-hint", output.Content.GetContent());
+        Assert.DoesNotContain("data-upload-hint", output.Content.GetContent(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BuildPreviewContainer_WithExistingPath_RendersImageCard()
+    public void BuildPreviewContainerWithExistingPathRendersImageCard()
     {
-        var container = FormFileTagHelper.BuildPreviewContainer("/uploads/cover.png");
+        const string storedPath = "/uploads/11111111111111111111111111111111.png";
+        var helper = BuildHelper(existingPath: storedPath);
+
+        var container = helper.BuildPreviewContainer(storedPath);
 
         var html = RenderTag(container);
-        Assert.Contains("<img", html);
+        Assert.Contains("<img", html, StringComparison.Ordinal);
         container.Attributes.TryGetValue("class", out var cls);
-        Assert.DoesNotContain("hidden", cls ?? "");
+        Assert.DoesNotContain("hidden", cls ?? "", StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BuildPreviewContainer_WithoutExistingPath_RendersHiddenContainer()
+    public void BuildPreviewContainerWithoutExistingPathRendersHiddenContainer()
     {
-        var container = FormFileTagHelper.BuildPreviewContainer(null);
+        var helper = BuildHelper(existingPath: null);
 
-        Assert.Contains("hidden", container.Attributes["class"] ?? "");
-        Assert.DoesNotContain("<img", RenderTag(container));
+        var container = helper.BuildPreviewContainer(null);
+
+        Assert.Contains("hidden", container.Attributes["class"] ?? "", StringComparison.Ordinal);
+        Assert.DoesNotContain("<img", RenderTag(container), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BuildFileInput_WithAccept_AddsAcceptAttribute()
+    public void BuildFileInputWithAcceptAddsAcceptAttribute()
     {
         var helper = BuildHelper(existingPath: null, accept: "image/*");
 
@@ -64,7 +70,7 @@ public class FormFileTagHelperTests
     }
 
     [Fact]
-    public void BuildFileInput_WithoutAccept_OmitsAcceptAttribute()
+    public void BuildFileInputWithoutAcceptOmitsAcceptAttribute()
     {
         var helper = BuildHelper(existingPath: null, accept: null);
 
@@ -74,7 +80,7 @@ public class FormFileTagHelperTests
     }
 
     [Fact]
-    public void BuildHiddenInput_WithPath_SetsValueToPath()
+    public void BuildHiddenInputWithPathSetsValueToPath()
     {
         var helper = BuildHelper(existingPath: "/uploads/cover.png");
 
@@ -84,7 +90,7 @@ public class FormFileTagHelperTests
     }
 
     [Fact]
-    public void BuildHiddenInput_NullPath_SetsEmptyValue()
+    public void BuildHiddenInputNullPathSetsEmptyValue()
     {
         var helper = BuildHelper(existingPath: null);
 
@@ -94,23 +100,33 @@ public class FormFileTagHelperTests
     }
 
     [Fact]
-    public void BuildHint_NotHidden_OmitsHiddenClass()
+    public void BuildHintNotHiddenOmitsHiddenClass()
     {
         var helper = BuildHelper(existingPath: null, hint: "Max 10 MB");
 
         var hint = helper.BuildHint(hidden: false);
 
-        Assert.DoesNotContain("hidden", hint.Attributes["class"] ?? "");
+        Assert.DoesNotContain("hidden", hint.Attributes["class"] ?? "", StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BuildHint_Hidden_AddsHiddenClass()
+    public void BuildHintHiddenAddsHiddenClass()
     {
         var helper = BuildHelper(existingPath: null, hint: "Max 10 MB");
 
         var hint = helper.BuildHint(hidden: true);
 
-        Assert.Contains("hidden", hint.Attributes["class"] ?? "");
+        Assert.Contains("hidden", hint.Attributes["class"] ?? "", StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GenerateInputReturnsPlaceholderInputTag()
+    {
+        var helper = BuildHelper(existingPath: null);
+
+        var input = helper.GenerateInput();
+
+        Assert.NotNull(input);
     }
 
     private static FormFileTagHelper BuildHelper(
@@ -134,7 +150,10 @@ public class FormFileTagHelperTests
         var provider = new EmptyModelMetadataProvider();
         var explorer = provider.GetModelExplorerForType(typeof(string), existingPath);
 
-        return new FormFileTagHelper(generator.Object, HtmlEncoder.Default)
+        var paths = TestUploadPaths.Create(Path.GetTempPath());
+        var imageStorage = new ImageStorage(paths);
+
+        return new FormFileTagHelper(generator.Object, HtmlEncoder.Default, imageStorage)
         {
             For = new ModelExpression("CoverImagePath", explorer),
             ViewContext = TestViewContext.Create(),

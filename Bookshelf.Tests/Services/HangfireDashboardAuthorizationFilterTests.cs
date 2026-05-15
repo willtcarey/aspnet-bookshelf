@@ -11,10 +11,13 @@ namespace Bookshelf.Tests.Services;
 
 public class HangfireDashboardAuthorizationFilterTests
 {
+    private static readonly string[] EditorRoles = ["Editor"];
+    private static readonly string[] AdminRoles = [RoleNames.Admin];
+
     private readonly HangfireDashboardAuthorizationFilter _filter = new();
 
     [Fact]
-    public void Authorize_PrincipalWithoutIdentity_ReturnsFalse()
+    public void AuthorizePrincipalWithoutIdentityReturnsFalse()
     {
         var context = BuildContext(new ClaimsPrincipal());
 
@@ -22,7 +25,7 @@ public class HangfireDashboardAuthorizationFilterTests
     }
 
     [Fact]
-    public void Authorize_AnonymousUser_ReturnsFalse()
+    public void AuthorizeAnonymousUserReturnsFalse()
     {
         var context = BuildContext(BuildAnonymous());
 
@@ -30,22 +33,22 @@ public class HangfireDashboardAuthorizationFilterTests
     }
 
     [Fact]
-    public void Authorize_AuthenticatedNonAdmin_ReturnsFalse()
+    public void AuthorizeAuthenticatedNonAdminReturnsFalse()
     {
-        var context = BuildContext(BuildAuthenticated(roles: new[] { "Editor" }));
+        var context = BuildContext(BuildAuthenticated(roles: EditorRoles));
 
         Assert.False(_filter.Authorize(context));
     }
 
     [Fact]
-    public void Authorize_AuthenticatedAdmin_ReturnsTrue()
+    public void AuthorizeAuthenticatedAdminReturnsTrue()
     {
-        var context = BuildContext(BuildAuthenticated(roles: new[] { RoleNames.Admin }));
+        var context = BuildContext(BuildAuthenticated(roles: AdminRoles));
 
         Assert.True(_filter.Authorize(context));
     }
 
-    private static DashboardContext BuildContext(ClaimsPrincipal user)
+    private static AspNetCoreDashboardContext BuildContext(ClaimsPrincipal user)
     {
         var httpContext = new DefaultHttpContext
         {

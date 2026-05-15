@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Moq;
 
 namespace Bookshelf.Tests.TagHelpers;
@@ -12,55 +13,55 @@ namespace Bookshelf.Tests.TagHelpers;
 public class FormTextTagHelperTests
 {
     [Fact]
-    public void IsNumericType_Byte_ReturnsTrue()
+    public void IsNumericTypeByteReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(byte)));
     }
 
     [Fact]
-    public void IsNumericType_Short_ReturnsTrue()
+    public void IsNumericTypeShortReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(short)));
     }
 
     [Fact]
-    public void IsNumericType_Int_ReturnsTrue()
+    public void IsNumericTypeIntReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(int)));
     }
 
     [Fact]
-    public void IsNumericType_Long_ReturnsTrue()
+    public void IsNumericTypeLongReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(long)));
     }
 
     [Fact]
-    public void IsNumericType_Float_ReturnsTrue()
+    public void IsNumericTypeFloatReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(float)));
     }
 
     [Fact]
-    public void IsNumericType_Double_ReturnsTrue()
+    public void IsNumericTypeDoubleReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(double)));
     }
 
     [Fact]
-    public void IsNumericType_Decimal_ReturnsTrue()
+    public void IsNumericTypeDecimalReturnsTrue()
     {
         Assert.True(FormTextTagHelper.IsNumericType(typeof(decimal)));
     }
 
     [Fact]
-    public void IsNumericType_NonNumeric_ReturnsFalse()
+    public void IsNumericTypeNonNumericReturnsFalse()
     {
         Assert.False(FormTextTagHelper.IsNumericType(typeof(string)));
     }
 
     [Fact]
-    public void ResolveInputType_ExplicitInputType_OverridesAll()
+    public void ResolveInputTypeExplicitInputTypeOverridesAll()
     {
         var helper = BuildHelper(modelType: typeof(int), explicitInputType: "search");
 
@@ -68,7 +69,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void ResolveInputType_DataTypeIsKnownString_MapsToHtmlInputType()
+    public void ResolveInputTypeDataTypeIsKnownStringMapsToHtmlInputType()
     {
         var helper = BuildHelper(modelType: typeof(string), dataTypeName: "EmailAddress");
 
@@ -76,7 +77,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void ResolveInputType_NoExplicit_NoDataType_FallsBackToText()
+    public void ResolveInputTypeNoExplicitNoDataTypeFallsBackToText()
     {
         var helper = BuildHelper(modelType: typeof(string));
 
@@ -84,7 +85,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void ResolveInputType_DataTypeIsPassword_MapsToPassword()
+    public void ResolveInputTypeDataTypeIsPasswordMapsToPassword()
     {
         var helper = BuildHelper(modelType: typeof(string), dataTypeName: "Password");
 
@@ -92,7 +93,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void ResolveInputType_DataTypeIsUrl_MapsToUrl()
+    public void ResolveInputTypeDataTypeIsUrlMapsToUrl()
     {
         var helper = BuildHelper(modelType: typeof(string), dataTypeName: "Url");
 
@@ -100,7 +101,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void ResolveInputType_DataTypeIsPhoneNumber_MapsToTel()
+    public void ResolveInputTypeDataTypeIsPhoneNumberMapsToTel()
     {
         var helper = BuildHelper(modelType: typeof(string), dataTypeName: "PhoneNumber");
 
@@ -108,7 +109,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void ResolveInputType_NumericModelType_FallsBackToNumber()
+    public void ResolveInputTypeNumericModelTypeFallsBackToNumber()
     {
         var helper = BuildHelper(modelType: typeof(int));
 
@@ -116,15 +117,35 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void GenerateInput_AppliesInputCssClass()
+    public void GenerateInputAppliesInputCssClass()
     {
         var generatedInput = new TagBuilder("input");
         var helper = BuildHelper(modelType: typeof(string), generatedInput: generatedInput);
 
         var result = helper.GenerateInput();
 
-        Assert.Contains("input", result.Attributes["class"]);
-        Assert.Contains("w-full", result.Attributes["class"]);
+        Assert.Contains("input", result.Attributes["class"], StringComparison.Ordinal);
+        Assert.Contains("w-full", result.Attributes["class"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProcessRendersFieldsetWithLabelInputAndValidation()
+    {
+        var helper = BuildHelper(modelType: typeof(string));
+        var context = new TagHelperContext(
+            "form-text",
+            new TagHelperAttributeList(),
+            new Dictionary<object, object>(),
+            Guid.NewGuid().ToString("N"));
+        var output = new TagHelperOutput(
+            "form-text",
+            new TagHelperAttributeList(),
+            (useCachedResult, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+
+        helper.Process(context, output);
+
+        Assert.Equal("fieldset", output.TagName);
+        Assert.Equal(TagMode.StartTagAndEndTag, output.TagMode);
     }
 
     private static FormTextTagHelper BuildHelper(
@@ -139,6 +160,16 @@ public class FormTextTagHelperTests
                 It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
                 It.IsAny<object?>(), It.IsAny<string?>(), It.IsAny<object?>()))
             .Returns(generatedInput ?? new TagBuilder("input"));
+
+        generator.Setup(g => g.GenerateLabel(
+                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
+                It.IsAny<string?>(), It.IsAny<object?>()))
+            .Returns(new TagBuilder("label"));
+
+        generator.Setup(g => g.GenerateValidationMessage(
+                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<object?>()))
+            .Returns(new TagBuilder("span"));
 
         return new FormTextTagHelper(generator.Object, HtmlEncoder.Default)
         {

@@ -7,10 +7,14 @@ using Moq;
 
 namespace Bookshelf.Tests.Models;
 
-public class ImageUploadInstanceTests : IDisposable
+public sealed class ImageUploadInstanceTests : IDisposable
 {
+    private const string ValidKey = "11111111111111111111111111111111.png";
+    private const string StoredPath = "/uploads/11111111111111111111111111111111.png";
+
     private readonly string _root;
     private readonly UploadStoragePaths _paths;
+    private readonly ImageStorage _imageStorage;
     private readonly Mock<IFileStorage> _storage;
     private readonly Mock<IImageProcessor> _processor;
     private readonly ImageUpload _upload;
@@ -20,9 +24,10 @@ public class ImageUploadInstanceTests : IDisposable
         _root = Path.Combine(Path.GetTempPath(), $"bookshelf-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_root);
         _paths = TestUploadPaths.Create(_root);
+        _imageStorage = new ImageStorage(_paths);
         _storage = new Mock<IFileStorage>();
         _processor = new Mock<IImageProcessor>();
-        _upload = new ImageUpload(_storage.Object, _processor.Object, _paths);
+        _upload = new ImageUpload(_storage.Object, _processor.Object, _imageStorage);
     }
 
     public void Dispose()
@@ -34,7 +39,7 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task SaveAsync_NullFile_ReturnsFailure()
+    public async Task SaveAsyncNullFileReturnsFailure()
     {
         var result = await _upload.SaveAsync(null);
 
@@ -43,18 +48,29 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task SaveAsync_FileExceedsMaxSize_ReturnsFailure()
+    public async Task SaveAsyncEmptyFileReturnsFailure()
+    {
+        var file = BuildFormFile(content: Array.Empty<byte>(), contentType: "image/png");
+
+        var result = await _upload.SaveAsync(file);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("No file provided.", result.Error);
+    }
+
+    [Fact]
+    public async Task SaveAsyncFileExceedsMaxSizeReturnsFailure()
     {
         var file = BuildFormFile(content: new byte[11 * 1024 * 1024], contentType: "image/png");
 
         var result = await _upload.SaveAsync(file);
 
         Assert.False(result.IsSuccess);
-        Assert.Contains("10 MB", result.Error);
+        Assert.Contains("10 MB", result.Error, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task SaveAsync_NonImageContentType_ReturnsFailure()
+    public async Task SaveAsyncNonImageContentTypeReturnsFailure()
     {
         var file = BuildFormFile(content: new byte[] { 1, 2, 3 }, contentType: "application/pdf");
 
@@ -65,7 +81,7 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task SaveAsync_ValidImage_ReturnsSuccessPath()
+    public async Task SaveAsyncValidImageReturnsSuccessPath()
     {
         var file = BuildFormFile(content: new byte[] { 1, 2, 3 }, fileName: "x.png", contentType: "image/png");
         _storage.Setup(s => s.SaveAsync(It.IsAny<Stream>(), "x.png", "image/png"))
@@ -78,75 +94,74 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAsync_PathInvalid_ReturnsNotFound()
+    public async Task GetAsyncInvalidKeyReturnsNotFound()
     {
-        var result = await _upload.GetAsync("not-uploads", null, null);
+        var result = await _upload.GetAsync("has/slash", null, null);
 
         Assert.IsType<ImageNotFoundResult>(result);
     }
 
     [Fact]
-    public async Task GetAsync_WidthInvalid_ReturnsError()
+    public async Task GetAsyncNullKeyReturnsNotFound()
     {
-        var result = await _upload.GetAsync("/uploads/cover.png", 0, null);
+        var result = await _upload.GetAsync(null, null, null);
+
+        Assert.IsType<ImageNotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task GetAsyncWidthInvalidReturnsError()
+    {
+        var result = await _upload.GetAsync(ValidKey, 0, null);
 
         Assert.IsType<ImageErrorResult>(result);
     }
 
     [Fact]
-    public async Task GetAsync_HeightInvalid_ReturnsError()
+    public async Task GetAsyncHeightInvalidReturnsError()
     {
-        var result = await _upload.GetAsync("/uploads/cover.png", null, 4001);
+        var result = await _upload.GetAsync(ValidKey, null, 4001);
 
         Assert.IsType<ImageErrorResult>(result);
     }
 
     [Fact]
-    public async Task GetAsync_NoDimensions_DelegatesToOriginal()
+    public async Task GetAsyncNoDimensionsDelegatesToOriginal()
     {
         var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
-        _storage.Setup(s => s.GetAsync("/uploads/cover.png")).ReturnsAsync(sourceStream);
+        _storage.Setup(s => s.GetAsync(StoredPath)).ReturnsAsync(sourceStream);
 
-        var result = await _upload.GetAsync("/uploads/cover.png", null, null);
+        var result = await _upload.GetAsync(ValidKey, null, null);
 
-        Assert.IsType<ImageStreamResult>(result);
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Equal("image/png", streamResult.ContentType);
     }
 
     [Fact]
-    public async Task GetAsync_UnsupportedFormat_ReturnsError()
+    public async Task GetAsyncUnsupportedFormatReturnsError()
     {
-        var result = await _upload.GetAsync("/uploads/cover.png", 100, null, format: "tiff");
+        var result = await _upload.GetAsync(ValidKey, 100, null, format: "tiff");
 
         var errorResult = Assert.IsType<ImageErrorResult>(result);
         Assert.Equal("Unsupported image format.", errorResult.Message);
     }
 
     [Fact]
-    public async Task GetAsync_WidthOnlyValidFormat_DelegatesToResize()
+    public async Task GetAsyncValidParamsDelegatesToResize()
     {
-        var cachePath = _paths.BuildCachePath("/uploads/cover.png", 100, null, ".webp");
-        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-        await File.WriteAllTextAsync(cachePath, "cached");
+        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
+        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
+        _storage.Setup(s => s.GetAsync(StoredPath)).ReturnsAsync(sourceStream);
+        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 200, "webp"))
+            .ReturnsAsync(resizedStream);
 
-        var result = await _upload.GetAsync("/uploads/cover.png", 100, null, format: "webp");
+        var result = await _upload.GetAsync(ValidKey, 100, 200, format: "webp");
 
-        Assert.IsType<ImageFileResult>(result);
+        Assert.IsType<ImageStreamResult>(result);
     }
 
     [Fact]
-    public async Task GetAsync_BothDimensionsValidFormat_DelegatesToResize()
-    {
-        var cachePath = _paths.BuildCachePath("/uploads/cover.png", 100, 200, ".webp");
-        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-        await File.WriteAllTextAsync(cachePath, "cached");
-
-        var result = await _upload.GetAsync("/uploads/cover.png", 100, 200, format: "webp");
-
-        Assert.IsType<ImageFileResult>(result);
-    }
-
-    [Fact]
-    public async Task GetOriginalAsync_StorageReturnsStream_ReturnsStreamResult()
+    public async Task GetOriginalAsyncStorageReturnsStreamReturnsStreamResult()
     {
         var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
         _storage.Setup(s => s.GetAsync("/uploads/cover.png")).ReturnsAsync(sourceStream);
@@ -158,7 +173,7 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetOriginalAsync_StorageReturnsNull_ReturnsNotFound()
+    public async Task GetOriginalAsyncStorageReturnsNullReturnsNotFound()
     {
         _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync((Stream?)null);
 
@@ -168,22 +183,7 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetResizedAsync_CacheHit_ReturnsCachedFile()
-    {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var cachePath = _paths.BuildCachePath("/uploads/cover.png", 100, 200, format.Extension);
-        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-        await File.WriteAllTextAsync(cachePath, "cached");
-
-        var result = await _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format);
-
-        var fileResult = Assert.IsType<ImageFileResult>(result);
-        Assert.Equal(cachePath, fileResult.FilePath);
-        _storage.Verify(s => s.GetAsync(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task GetResizedAsync_CacheMissAndSourceMissing_ReturnsNotFound()
+    public async Task GetResizedAsyncSourceMissingReturnsNotFound()
     {
         var format = ImageUpload.ResolveFormat("webp")!;
         _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync((Stream?)null);
@@ -194,7 +194,7 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetResizedAsync_CacheMiss_PersistsResizedFile()
+    public async Task GetResizedAsyncReturnsResizedStream()
     {
         var format = ImageUpload.ResolveFormat("webp")!;
         var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
@@ -205,12 +205,13 @@ public class ImageUploadInstanceTests : IDisposable
 
         var result = await _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format);
 
-        var fileResult = Assert.IsType<ImageFileResult>(result);
-        Assert.Equal("resized-bytes", await File.ReadAllTextAsync(fileResult.FilePath));
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Same(resizedStream, streamResult.Stream);
+        Assert.Equal("image/webp", streamResult.ContentType);
     }
 
     [Fact]
-    public async Task GetResizedAsync_WidthNull_DefaultsToMaxResizeDimension()
+    public async Task GetResizedAsyncWidthNullDefaultsToMaxResizeDimension()
     {
         var format = ImageUpload.ResolveFormat("webp")!;
         var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
@@ -226,7 +227,7 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetResizedAsync_HeightNull_DefaultsToMaxResizeDimension()
+    public async Task GetResizedAsyncHeightNullDefaultsToMaxResizeDimension()
     {
         var format = ImageUpload.ResolveFormat("webp")!;
         var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
@@ -242,73 +243,14 @@ public class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetResizedAsync_SeekableResizedStream_RewindsBeforeWriting()
+    public void BuildUrlDelegatesToImageStorage()
     {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
-        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
-        resizedStream.Position = resizedStream.Length;
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
-            .ReturnsAsync(resizedStream);
+        var url = _upload.BuildUrl(StoredPath, 100, 200, "webp");
 
-        var result = await _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format);
-
-        var fileResult = Assert.IsType<ImageFileResult>(result);
-        Assert.Equal("resized", await File.ReadAllTextAsync(fileResult.FilePath));
+        Assert.Equal($"/images/{ValidKey}?w=100&h=200&format=webp", url);
     }
 
-    [Fact]
-    public async Task GetResizedAsync_FailureDuringWrite_CleansUpTempFile()
-    {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
-        var throwingStream = new ThrowOnReadStream();
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
-            .ReturnsAsync(throwingStream);
-
-        await Assert.ThrowsAsync<IOException>(
-            () => _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format));
-
-        var cachePath = _paths.BuildCachePath("/uploads/cover.png", 100, 200, format.Extension);
-        var dir = Path.GetDirectoryName(cachePath)!;
-        var tempFiles = Directory.Exists(dir) ? Directory.GetFiles(dir, "*.tmp") : Array.Empty<string>();
-        Assert.Empty(tempFiles);
-    }
-
-    private sealed class ThrowOnReadStream : Stream
-    {
-        public override bool CanRead => true;
-        public override bool CanSeek => false;
-        public override bool CanWrite => false;
-        public override long Length => 100;
-        public override long Position { get => 0; set { } }
-        public override void Flush() { }
-        public override int Read(byte[] buffer, int offset, int count) => throw new IOException("simulated read failure");
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-    }
-
-    [Fact]
-    public async Task GetResizedAsync_AfterMove_TempFileDoesNotExist()
-    {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
-        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
-            .ReturnsAsync(resizedStream);
-
-        var result = await _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format);
-
-        var fileResult = Assert.IsType<ImageFileResult>(result);
-        var tempFiles = Directory.GetFiles(Path.GetDirectoryName(fileResult.FilePath)!, "*.tmp");
-        Assert.Empty(tempFiles);
-    }
-
-    private static IFormFile BuildFormFile(byte[] content, string fileName = "x.png", string contentType = "image/png")
+    private static FormFile BuildFormFile(byte[] content, string fileName = "x.png", string contentType = "image/png")
     {
         var stream = new MemoryStream(content);
         return new FormFile(stream, baseStreamOffset: 0, length: content.Length, name: "file", fileName: fileName)
