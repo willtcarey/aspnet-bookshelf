@@ -7,7 +7,7 @@ using Moq;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class AccountControllerTests
+public sealed class AccountControllerTests : IDisposable
 {
     private readonly Mock<UserManager<IdentityUser>> _userManager;
     private readonly Mock<SignInManager<IdentityUser>> _signInManager;
@@ -20,14 +20,22 @@ public class AccountControllerTests
         _controller = new AccountController(_userManager.Object, _signInManager.Object);
     }
 
+    public void Dispose()
+    {
+        _controller.Dispose();
+        _userManager.Object.Dispose();
+        _signInManager.Object.UserManager.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     [Fact]
-    public void Register_Get_ReturnsView()
+    public void RegisterGetReturnsView()
     {
         Assert.IsType<ViewResult>(_controller.Register());
     }
 
     [Fact]
-    public async Task Register_Post_ValidAndCreated_SignsInAndRedirectsToHome()
+    public async Task RegisterPostValidAndCreatedSignsInAndRedirectsToHome()
     {
         var model = new RegisterViewModel { Email = "a@b.com", Password = "Password1!" };
         _userManager.Setup(m => m.CreateAsync(It.IsAny<IdentityUser>(), model.Password))
@@ -44,7 +52,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Register_Post_ValidButCreateFailed_AddsModelErrorsAndReturnsView()
+    public async Task RegisterPostValidButCreateFailedAddsModelErrorsAndReturnsView()
     {
         var model = new RegisterViewModel { Email = "a@b.com", Password = "weak" };
         var errors = new[]
@@ -64,7 +72,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Register_Post_InvalidModelState_ReturnsViewWithoutCallingManagers()
+    public async Task RegisterPostInvalidModelStateReturnsViewWithoutCallingManagers()
     {
         _controller.ModelState.AddModelError("Email", "required");
         var model = new RegisterViewModel();
@@ -76,14 +84,14 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public void Login_Get_ReturnsViewWithReturnUrlInViewData()
+    public void LoginGetReturnsViewWithReturnUrlInViewData()
     {
         var view = Assert.IsType<ViewResult>(_controller.Login("/somewhere"));
         Assert.Equal("/somewhere", view.ViewData["ReturnUrl"]);
     }
 
     [Fact]
-    public async Task Login_Post_ValidAndSuccess_LocalRedirectsToReturnUrl()
+    public async Task LoginPostValidAndSuccessLocalRedirectsToReturnUrl()
     {
         var model = new LoginViewModel { Email = "a@b.com", Password = "P!" };
         _signInManager.Setup(m => m.PasswordSignInAsync(model.Email, model.Password, false, false))
@@ -96,7 +104,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Login_Post_ValidAndSuccessNoReturnUrl_LocalRedirectsToRoot()
+    public async Task LoginPostValidAndSuccessNoReturnUrlLocalRedirectsToRoot()
     {
         var model = new LoginViewModel { Email = "a@b.com", Password = "P!" };
         _signInManager.Setup(m => m.PasswordSignInAsync(model.Email, model.Password, false, false))
@@ -109,7 +117,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Login_Post_ValidButFailed_AddsModelErrorAndReturnsView()
+    public async Task LoginPostValidButFailedAddsModelErrorAndReturnsView()
     {
         var model = new LoginViewModel { Email = "a@b.com", Password = "bad" };
         _signInManager.Setup(m => m.PasswordSignInAsync(model.Email, model.Password, false, false))
@@ -123,7 +131,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Login_Post_InvalidModelState_ReturnsViewWithoutCallingSignInManager()
+    public async Task LoginPostInvalidModelStateReturnsViewWithoutCallingSignInManager()
     {
         _controller.ModelState.AddModelError("Email", "required");
         var model = new LoginViewModel();
@@ -137,7 +145,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Logout_SignsOutAndRedirectsToHome()
+    public async Task LogoutSignsOutAndRedirectsToHome()
     {
         _signInManager.Setup(m => m.SignOutAsync()).Returns(Task.CompletedTask);
 

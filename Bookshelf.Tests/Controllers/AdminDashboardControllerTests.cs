@@ -8,7 +8,7 @@ using Moq;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class AdminDashboardControllerTests : IDisposable
+public sealed class AdminDashboardControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _userManager;
@@ -22,10 +22,10 @@ public class AdminDashboardControllerTests : IDisposable
         _controller = new DashboardController(_context, _userManager.Object);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     [Fact]
-    public async Task Index_PopulatesCountsInViewData()
+    public async Task IndexPopulatesCountsInViewData()
     {
         var user = new IdentityUser
         {

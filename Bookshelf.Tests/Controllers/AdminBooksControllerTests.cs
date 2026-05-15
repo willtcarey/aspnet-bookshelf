@@ -9,7 +9,7 @@ using AdminBooksController = Bookshelf.Areas.Admin.Controllers.BooksController;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class AdminBooksControllerTests : IDisposable
+public sealed class AdminBooksControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly AdminBooksController _controller;
@@ -20,7 +20,7 @@ public class AdminBooksControllerTests : IDisposable
         _controller = new AdminBooksController(_context);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     private async Task<(IdentityUser User, Bookshelf.Models.Author Author)> SeedAuthorWithUser(string email = "owner@example.com", string authorName = "Ursula")
     {
@@ -40,7 +40,7 @@ public class AdminBooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Get_PopulatesAuthorsSelectListOrderedByName()
+    public async Task CreateGetPopulatesAuthorsSelectListOrderedByName()
     {
         await SeedAuthorWithUser("o1@example.com", "Charlie");
         await SeedAuthorWithUser("o2@example.com", "Alpha");
@@ -48,12 +48,12 @@ public class AdminBooksControllerTests : IDisposable
         var view = Assert.IsType<ViewResult>(await _controller.Create());
         var vm = Assert.IsType<AdminBookFormViewModel>(view.Model);
         var items = Assert.IsType<SelectList>(vm.Authors).ToList();
-        Assert.StartsWith("Alpha", items[0].Text);
-        Assert.StartsWith("Charlie", items[1].Text);
+        Assert.StartsWith("Alpha", items[0].Text, StringComparison.Ordinal);
+        Assert.StartsWith("Charlie", items[1].Text, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Create_Post_Valid_PersistsBook()
+    public async Task CreatePostValidPersistsBook()
     {
         var (_, author) = await SeedAuthorWithUser();
 
@@ -69,7 +69,7 @@ public class AdminBooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Get_PopulatesViewModelFromEntity()
+    public async Task EditGetPopulatesViewModelFromEntity()
     {
         var (_, author) = await SeedAuthorWithUser();
         var book = new BookBuilder().WithTitle("Earthsea").WithAuthorId(author.Id).Build();
@@ -82,7 +82,7 @@ public class AdminBooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_Valid_PersistsUpdates()
+    public async Task EditPostValidPersistsUpdates()
     {
         var (_, author) = await SeedAuthorWithUser();
         var book = new BookBuilder().WithTitle("Old").WithAuthorId(author.Id).Build();
@@ -98,7 +98,7 @@ public class AdminBooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_ExercisesGetBaseQueryAndDefaultSort()
+    public async Task IndexExercisesGetBaseQueryAndDefaultSort()
     {
         var (_, author) = await SeedAuthorWithUser();
         _context.Books.Add(new BookBuilder().WithTitle("Charlie").WithAuthorId(author.Id).Build());
@@ -111,7 +111,7 @@ public class AdminBooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_ExercisesSortMapTitle()
+    public async Task IndexExercisesSortMapTitle()
     {
         var (_, author) = await SeedAuthorWithUser();
         _context.Books.Add(new BookBuilder().WithTitle("Charlie").WithAuthorId(author.Id).Build());
@@ -124,7 +124,7 @@ public class AdminBooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Delete_Get_ExercisesGetBaseQuery()
+    public async Task DeleteGetExercisesGetBaseQuery()
     {
         var (_, author) = await SeedAuthorWithUser();
         var book = new BookBuilder().WithAuthorId(author.Id).Build();

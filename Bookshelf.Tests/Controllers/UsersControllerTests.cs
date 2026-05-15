@@ -12,7 +12,7 @@ using Moq;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class UsersControllerTests : IDisposable
+public sealed class UsersControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _userManager;
@@ -30,7 +30,7 @@ public class UsersControllerTests : IDisposable
         AttachCurrentUser(CurrentAdminId);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     private void AttachCurrentUser(string userId)
     {
@@ -59,7 +59,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_DefaultSort_OrdersByEmailAscending()
+    public async Task IndexDefaultSortOrdersByEmailAscending()
     {
         await SeedUser("u1", "charlie@example.com");
         await SeedUser("u2", "alpha@example.com");
@@ -71,7 +71,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_EmailDescending_OrdersByEmailDescending()
+    public async Task IndexEmailDescendingOrdersByEmailDescending()
     {
         await SeedUser("u1", "alpha@example.com");
         await SeedUser("u2", "charlie@example.com");
@@ -83,7 +83,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_EmailAscendingExplicit_OrdersByEmailAscending()
+    public async Task IndexEmailAscendingExplicitOrdersByEmailAscending()
     {
         await SeedUser("u1", "charlie@example.com");
         await SeedUser("u2", "alpha@example.com");
@@ -95,7 +95,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_PopulatesIsAdminFlag()
+    public async Task IndexPopulatesIsAdminFlag()
     {
         var admin = await SeedUser("u1", "admin@example.com");
         var regular = await SeedUser("u2", "user@example.com");
@@ -109,7 +109,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task ToggleAdmin_TargetingSelf_RedirectsWithoutMutatingRoles()
+    public async Task ToggleAdminTargetingSelfRedirectsWithoutMutatingRoles()
     {
         var result = await _controller.ToggleAdmin(CurrentAdminId);
 
@@ -119,7 +119,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task ToggleAdmin_UserMissing_ReturnsNotFound()
+    public async Task ToggleAdminUserMissingReturnsNotFound()
     {
         _userManager.Setup(m => m.FindByIdAsync("missing")).ReturnsAsync((IdentityUser?)null);
 
@@ -129,7 +129,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task ToggleAdmin_UserIsAdmin_RemovesAdminRoleAndRedirects()
+    public async Task ToggleAdminUserIsAdminRemovesAdminRoleAndRedirects()
     {
         var target = new IdentityUser { Id = "u-target", Email = "x@y.com" };
         _userManager.Setup(m => m.FindByIdAsync("u-target")).ReturnsAsync(target);
@@ -145,7 +145,7 @@ public class UsersControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task ToggleAdmin_UserIsNotAdmin_AddsAdminRoleAndRedirects()
+    public async Task ToggleAdminUserIsNotAdminAddsAdminRoleAndRedirects()
     {
         var target = new IdentityUser { Id = "u-target", Email = "x@y.com" };
         _userManager.Setup(m => m.FindByIdAsync("u-target")).ReturnsAsync(target);

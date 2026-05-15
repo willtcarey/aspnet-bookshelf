@@ -10,7 +10,7 @@ using AdminAuthorsController = Bookshelf.Areas.Admin.Controllers.AuthorsControll
 
 namespace Bookshelf.Tests.Controllers;
 
-public class AdminAuthorsControllerTests : IDisposable
+public sealed class AdminAuthorsControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly Mock<UserManager<IdentityUser>> _userManager;
@@ -24,7 +24,7 @@ public class AdminAuthorsControllerTests : IDisposable
         _controller = new AdminAuthorsController(_context, _userManager.Object);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     private async Task SeedUser(string id, string email)
     {
@@ -40,7 +40,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Get_PopulatesUsersSelectListOrderedByEmail()
+    public async Task CreateGetPopulatesUsersSelectListOrderedByEmail()
     {
         await SeedUser("u1", "charlie@example.com");
         await SeedUser("u2", "alpha@example.com");
@@ -53,7 +53,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_Valid_PersistsAuthorWithSelectedUser()
+    public async Task CreatePostValidPersistsAuthorWithSelectedUser()
     {
         await SeedUser("u1", "a@b.com");
 
@@ -64,7 +64,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Get_PopulatesViewModelFromEntity()
+    public async Task EditGetPopulatesViewModelFromEntity()
     {
         await SeedUser("u1", "a@b.com");
         var author = new AuthorBuilder().WithName("Ursula").WithUserId("u1").Build();
@@ -78,7 +78,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_Valid_PersistsUpdates()
+    public async Task EditPostValidPersistsUpdates()
     {
         await SeedUser("u1", "a@b.com");
         var author = new AuthorBuilder().WithName("Old").WithUserId("u1").Build();
@@ -94,7 +94,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_ExercisesGetBaseQueryAndDefaultSort()
+    public async Task IndexExercisesGetBaseQueryAndDefaultSort()
     {
         await SeedUser("u1", "a@b.com");
         _context.Authors.Add(new AuthorBuilder().WithName("Charlie").WithUserId("u1").Build());
@@ -107,7 +107,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_ExercisesSortMapName()
+    public async Task IndexExercisesSortMapName()
     {
         await SeedUser("u1", "a@b.com");
         _context.Authors.Add(new AuthorBuilder().WithName("Charlie").WithUserId("u1").Build());
@@ -120,7 +120,7 @@ public class AdminAuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Delete_Get_ExercisesGetBaseQuery()
+    public async Task DeleteGetExercisesGetBaseQuery()
     {
         await SeedUser("u1", "a@b.com");
         var author = new AuthorBuilder().WithName("X").WithUserId("u1").Build();

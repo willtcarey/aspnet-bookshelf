@@ -5,7 +5,7 @@ namespace Bookshelf.Tests.Models;
 public class ErrorViewModelTests
 {
     [Fact]
-    public void ShowRequestId_NonEmptyRequestId_ReturnsTrue()
+    public void ShowRequestIdNonEmptyRequestIdReturnsTrue()
     {
         var vm = new ErrorViewModel { RequestId = "trace-abc" };
 
@@ -13,7 +13,7 @@ public class ErrorViewModelTests
     }
 
     [Fact]
-    public void ShowRequestId_NullRequestId_ReturnsFalse()
+    public void ShowRequestIdNullRequestIdReturnsFalse()
     {
         var vm = new ErrorViewModel { RequestId = null };
 
@@ -21,7 +21,7 @@ public class ErrorViewModelTests
     }
 
     [Fact]
-    public void ShowRequestId_EmptyRequestId_ReturnsFalse()
+    public void ShowRequestIdEmptyRequestIdReturnsFalse()
     {
         var vm = new ErrorViewModel { RequestId = string.Empty };
 

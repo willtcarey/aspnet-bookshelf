@@ -1,5 +1,4 @@
 using Bookshelf.Data;
-using Bookshelf.Models;
 using Bookshelf.Services;
 using Bookshelf.Tests.Builders;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +22,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_AddedEntityWithPath_NoDeletesOnSuccess()
+    public async Task SaveChangesAsyncAddedEntityWithPathNoDeletesOnSuccess()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -40,7 +39,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_AddedEntityWithPath_DeletesNewPathOnFailure()
+    public async Task SaveChangesAsyncAddedEntityWithPathDeletesNewPathOnFailure()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage, new FailingSaveInterceptor());
@@ -53,7 +52,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_AddedEntityWithBlankPath_NoDeleteCalls()
+    public async Task SaveChangesAsyncAddedEntityWithBlankPathNoDeleteCalls()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage, new FailingSaveInterceptor());
@@ -66,7 +65,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_ModifiedEntity_PathChanged_DeletesOldOnSuccess()
+    public async Task SaveChangesAsyncModifiedEntityPathChangedDeletesOldOnSuccess()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -84,7 +83,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_ModifiedEntity_PathChanged_DeletesNewOnFailure()
+    public async Task SaveChangesAsyncModifiedEntityPathChangedDeletesNewOnFailure()
     {
         var storage = new Mock<IFileStorage>();
         var dbName = Guid.NewGuid().ToString();
@@ -115,7 +114,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_ModifiedEntity_PathUnchanged_NoDeleteCalls()
+    public async Task SaveChangesAsyncModifiedEntityPathUnchangedNoDeleteCalls()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -132,7 +131,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_ModifiedEntity_OriginalBlank_DeletesOnlyNewOnFailure()
+    public async Task SaveChangesAsyncModifiedEntityOriginalBlankDeletesOnlyNewOnFailure()
     {
         var storage = new Mock<IFileStorage>();
         var dbName = Guid.NewGuid().ToString();
@@ -162,7 +161,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_ModifiedEntity_NewBlank_DeletesOnlyOldOnSuccess()
+    public async Task SaveChangesAsyncModifiedEntityNewBlankDeletesOnlyOldOnSuccess()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -179,7 +178,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_DeletedEntityWithPath_DeletesPathOnSuccess()
+    public async Task SaveChangesAsyncDeletedEntityWithPathDeletesPathOnSuccess()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -196,7 +195,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_DeletedEntityWithBlankPath_NoDeleteCalls()
+    public async Task SaveChangesAsyncDeletedEntityWithBlankPathNoDeleteCalls()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -213,7 +212,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_UnchangedEntity_NoDeleteCalls()
+    public async Task SaveChangesAsyncUnchangedEntityNoDeleteCalls()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);
@@ -229,7 +228,7 @@ public class ApplicationDbContextTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_EntityWithoutAttachmentProperties_NoDeleteCalls()
+    public async Task SaveChangesAsyncEntityWithoutAttachmentPropertiesNoDeleteCalls()
     {
         var storage = new Mock<IFileStorage>();
         await using var context = BuildContext(storage);

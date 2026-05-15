@@ -5,7 +5,7 @@ namespace Bookshelf.Tests.Helpers;
 public class PaginatedListTests
 {
     [Fact]
-    public void HasPreviousPage_PageIndexOne_ReturnsFalse()
+    public void HasPreviousPagePageIndexOneReturnsFalse()
     {
         var list = new PaginatedList<string>(
             items: new List<string>(), count: 50, pageIndex: 1, pageSize: 10, sortColumn: null, sortDirection: null);
@@ -14,7 +14,7 @@ public class PaginatedListTests
     }
 
     [Fact]
-    public void HasPreviousPage_PageIndexGreaterThanOne_ReturnsTrue()
+    public void HasPreviousPagePageIndexGreaterThanOneReturnsTrue()
     {
         var list = new PaginatedList<string>(
             items: new List<string>(), count: 50, pageIndex: 2, pageSize: 10, sortColumn: null, sortDirection: null);
@@ -23,7 +23,7 @@ public class PaginatedListTests
     }
 
     [Fact]
-    public void HasNextPage_PageIndexLessThanTotalPages_ReturnsTrue()
+    public void HasNextPagePageIndexLessThanTotalPagesReturnsTrue()
     {
         var list = new PaginatedList<string>(
             items: new List<string>(), count: 50, pageIndex: 2, pageSize: 10, sortColumn: null, sortDirection: null);
@@ -32,7 +32,7 @@ public class PaginatedListTests
     }
 
     [Fact]
-    public void HasNextPage_OnLastPage_ReturnsFalse()
+    public void HasNextPageOnLastPageReturnsFalse()
     {
         var list = new PaginatedList<string>(
             items: new List<string>(), count: 50, pageIndex: 5, pageSize: 10, sortColumn: null, sortDirection: null);

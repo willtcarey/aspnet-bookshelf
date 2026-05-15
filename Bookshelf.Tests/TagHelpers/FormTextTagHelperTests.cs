@@ -149,7 +149,7 @@ public class FormTextTagHelperTests
     }
 
     [Fact]
-    public void Process_RendersFieldsetViaBaseRenderContent()
+    public void ProcessRendersFieldsetViaBaseRenderContent()
     {
         // Exercises FormTagHelperBase.Process AND the default RenderContent
         // implementation (FormTextTagHelper doesn't override RenderContent).
