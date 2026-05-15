@@ -107,22 +107,6 @@ public class AuthorRepository
         return RepositoryResult.Success;
     }
 
-    private async Task<bool> ValidateAsync(AuthorFormViewModel viewModel, ModelStateDictionary modelState, int? currentId)
-    {
-        var nameExists = await _context.Authors
-            .AnyAsync(a => a.UserId == _userId
-                && a.Name == viewModel.Name
-                && (currentId == null || a.Id != currentId));
-        if (nameExists)
-        {
-            modelState.AddModelError(
-                nameof(viewModel.Name),
-                "You already have an author with this name.");
-            return false;
-        }
-        return true;
-    }
-
     public void Remove(Author author)
     {
         _context.Authors.Remove(author);

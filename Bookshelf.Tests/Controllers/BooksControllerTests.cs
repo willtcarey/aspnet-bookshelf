@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class BooksControllerTests : IDisposable
+public sealed class BooksControllerTests : IDisposable
 {
     private const string UserId = RepositoryTestContext.DefaultUserId;
     private const string OtherUserId = "other-user-id";
@@ -25,7 +25,7 @@ public class BooksControllerTests : IDisposable
         _controller = new BooksController(_repository);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     private async Task<Author> SeedAuthor(string userId = UserId, string name = "Ursula")
     {
@@ -44,7 +44,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_ReturnsViewWithBooks()
+    public async Task IndexReturnsViewWithBooks()
     {
         var author = await SeedAuthor();
         await SeedBook(author);
@@ -55,19 +55,19 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Details_NullId_ReturnsNotFound()
+    public async Task DetailsNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Details(null));
     }
 
     [Fact]
-    public async Task Details_BookMissing_ReturnsNotFound()
+    public async Task DetailsBookMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Details(999));
     }
 
     [Fact]
-    public async Task Details_BookFound_ReturnsViewWithBook()
+    public async Task DetailsBookFoundReturnsViewWithBook()
     {
         var author = await SeedAuthor();
         var book = await SeedBook(author);
@@ -78,7 +78,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Get_ReturnsViewWithFormAndAuthorList()
+    public async Task CreateGetReturnsViewWithFormAndAuthorList()
     {
         await SeedAuthor(name: "Alpha");
 
@@ -89,7 +89,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_Valid_RedirectsAndPersists()
+    public async Task CreatePostValidRedirectsAndPersists()
     {
         var author = await SeedAuthor();
 
@@ -106,7 +106,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_RepositoryRejectsAuthor_ReturnsViewWithAuthorList()
+    public async Task CreatePostRepositoryRejectsAuthorReturnsViewWithAuthorList()
     {
         // The author belongs to a different user, so BookRepository.CreateAsync
         // returns ValidationFailed and the controller should fall through to View.
@@ -122,7 +122,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_InvalidModelState_ReturnsViewWithAuthorList()
+    public async Task CreatePostInvalidModelStateReturnsViewWithAuthorList()
     {
         await SeedAuthor();
         _controller.ModelState.AddModelError("Title", "required");
@@ -137,19 +137,19 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Get_NullId_ReturnsNotFound()
+    public async Task EditGetNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Edit((int?)null));
     }
 
     [Fact]
-    public async Task Edit_Get_BookMissing_ReturnsNotFound()
+    public async Task EditGetBookMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Edit((int?)999));
     }
 
     [Fact]
-    public async Task Edit_Get_BookFound_ReturnsPopulatedView()
+    public async Task EditGetBookFoundReturnsPopulatedView()
     {
         var author = await SeedAuthor();
         var book = await SeedBook(author, "Earthsea");
@@ -162,7 +162,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_RouteIdMismatch_ReturnsNotFound()
+    public async Task EditPostRouteIdMismatchReturnsNotFound()
     {
         var result = await _controller.Edit(id: 1, new BookFormViewModel { Id = 2 });
 
@@ -170,7 +170,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_Valid_PersistsAndRedirects()
+    public async Task EditPostValidPersistsAndRedirects()
     {
         var author = await SeedAuthor();
         var book = await SeedBook(author, "Old");
@@ -185,7 +185,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_BookNotFound_ReturnsNotFound()
+    public async Task EditPostBookNotFoundReturnsNotFound()
     {
         var author = await SeedAuthor();
 
@@ -197,7 +197,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_AuthorReassignmentRejected_ReturnsViewWithAuthorList()
+    public async Task EditPostAuthorReassignmentRejectedReturnsViewWithAuthorList()
     {
         var mineAuthor = await SeedAuthor(name: "Mine");
         var foreignAuthor = await SeedAuthor(OtherUserId, "Foreign");
@@ -212,7 +212,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_InvalidModelState_ReturnsViewWithAuthorList()
+    public async Task EditPostInvalidModelStateReturnsViewWithAuthorList()
     {
         var author = await SeedAuthor();
         var book = await SeedBook(author);
@@ -227,19 +227,19 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Delete_Get_NullId_ReturnsNotFound()
+    public async Task DeleteGetNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Delete(null));
     }
 
     [Fact]
-    public async Task Delete_Get_BookMissing_ReturnsNotFound()
+    public async Task DeleteGetBookMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Delete(999));
     }
 
     [Fact]
-    public async Task Delete_Get_BookFound_ReturnsViewWithBook()
+    public async Task DeleteGetBookFoundReturnsViewWithBook()
     {
         var author = await SeedAuthor();
         var book = await SeedBook(author);
@@ -249,7 +249,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfirmed_BookMissing_RedirectsWithoutDeleting()
+    public async Task DeleteConfirmedBookMissingRedirectsWithoutDeleting()
     {
         var result = await _controller.DeleteConfirmed(999);
 
@@ -257,7 +257,7 @@ public class BooksControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfirmed_BookFound_DeletesAndRedirects()
+    public async Task DeleteConfirmedBookFoundDeletesAndRedirects()
     {
         var author = await SeedAuthor();
         var book = await SeedBook(author);

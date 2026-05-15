@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class AuthorsControllerTests : IDisposable
+public sealed class AuthorsControllerTests : IDisposable
 {
     private const string UserId = RepositoryTestContext.DefaultUserId;
 
@@ -24,7 +24,7 @@ public class AuthorsControllerTests : IDisposable
         _controller = new AuthorsController(_repository);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     private async Task<Author> SeedAuthor(string name = "Ursula")
     {
@@ -35,7 +35,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_ReturnsViewWithAuthors()
+    public async Task IndexReturnsViewWithAuthors()
     {
         await SeedAuthor();
 
@@ -45,19 +45,19 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Details_NullId_ReturnsNotFound()
+    public async Task DetailsNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Details(null));
     }
 
     [Fact]
-    public async Task Details_AuthorMissing_ReturnsNotFound()
+    public async Task DetailsAuthorMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Details(999));
     }
 
     [Fact]
-    public async Task Details_AuthorFound_ReturnsViewWithAuthor()
+    public async Task DetailsAuthorFoundReturnsViewWithAuthor()
     {
         var author = await SeedAuthor();
 
@@ -67,7 +67,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public void Create_Get_ReturnsViewWithEmptyForm()
+    public void CreateGetReturnsViewWithEmptyForm()
     {
         var view = Assert.IsType<ViewResult>(_controller.Create());
         var vm = Assert.IsType<AuthorFormViewModel>(view.Model);
@@ -75,7 +75,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_Valid_RedirectsToIndexAndPersists()
+    public async Task CreatePostValidRedirectsToIndexAndPersists()
     {
         var result = await _controller.Create(new AuthorFormViewModel { Name = "Ursula" });
 
@@ -85,7 +85,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_DuplicateName_ReturnsViewWithoutRedirecting()
+    public async Task CreatePostDuplicateNameReturnsViewWithoutRedirecting()
     {
         await SeedAuthor("Ursula");
         var vm = new AuthorFormViewModel { Name = "Ursula" };
@@ -97,7 +97,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_InvalidModelState_ReturnsViewWithoutPersisting()
+    public async Task CreatePostInvalidModelStateReturnsViewWithoutPersisting()
     {
         _controller.ModelState.AddModelError("Name", "required");
         var vm = new AuthorFormViewModel();
@@ -110,19 +110,19 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Get_NullId_ReturnsNotFound()
+    public async Task EditGetNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Edit((int?)null));
     }
 
     [Fact]
-    public async Task Edit_Get_AuthorMissing_ReturnsNotFound()
+    public async Task EditGetAuthorMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Edit((int?)999));
     }
 
     [Fact]
-    public async Task Edit_Get_AuthorFound_ReturnsPopulatedView()
+    public async Task EditGetAuthorFoundReturnsPopulatedView()
     {
         var author = await SeedAuthor("Ursula");
 
@@ -133,7 +133,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_RouteIdMismatch_ReturnsNotFound()
+    public async Task EditPostRouteIdMismatchReturnsNotFound()
     {
         var result = await _controller.Edit(id: 1, new AuthorFormViewModel { Id = 2 });
 
@@ -141,7 +141,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_ValidAndOwned_PersistsAndRedirects()
+    public async Task EditPostValidAndOwnedPersistsAndRedirects()
     {
         var author = await SeedAuthor("Old");
 
@@ -155,7 +155,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_AuthorNotFound_ReturnsNotFound()
+    public async Task EditPostAuthorNotFoundReturnsNotFound()
     {
         // The repository returns NotFound when no author with the given id exists for this user.
         var result = await _controller.Edit(
@@ -166,7 +166,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_RenameToOtherAuthorsName_ReturnsViewWithoutPersisting()
+    public async Task EditPostRenameToOtherAuthorsNameReturnsViewWithoutPersisting()
     {
         var a = await SeedAuthor("Alpha");
         var b = await SeedAuthor("Beta");
@@ -180,7 +180,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_InvalidModelState_ReturnsViewWithoutPersisting()
+    public async Task EditPostInvalidModelStateReturnsViewWithoutPersisting()
     {
         var author = await SeedAuthor("Old");
         _controller.ModelState.AddModelError("Name", "required");
@@ -194,19 +194,19 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Delete_Get_NullId_ReturnsNotFound()
+    public async Task DeleteGetNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Delete(null));
     }
 
     [Fact]
-    public async Task Delete_Get_AuthorMissing_ReturnsNotFound()
+    public async Task DeleteGetAuthorMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Delete(999));
     }
 
     [Fact]
-    public async Task Delete_Get_AuthorFound_ReturnsViewWithAuthor()
+    public async Task DeleteGetAuthorFoundReturnsViewWithAuthor()
     {
         var author = await SeedAuthor();
 
@@ -215,7 +215,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfirmed_AuthorMissing_RedirectsWithoutDeleting()
+    public async Task DeleteConfirmedAuthorMissingRedirectsWithoutDeleting()
     {
         var result = await _controller.DeleteConfirmed(999);
 
@@ -223,7 +223,7 @@ public class AuthorsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfirmed_AuthorFound_DeletesAndRedirects()
+    public async Task DeleteConfirmedAuthorFoundDeletesAndRedirects()
     {
         var author = await SeedAuthor();
 

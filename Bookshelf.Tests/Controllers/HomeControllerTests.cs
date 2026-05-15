@@ -9,25 +9,31 @@ using Moq;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class HomeControllerTests
+public sealed class HomeControllerTests : IDisposable
 {
     private readonly HomeController _controller =
         new(Mock.Of<ILogger<HomeController>>());
 
+    public void Dispose()
+    {
+        _controller.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     [Fact]
-    public void Index_ReturnsView()
+    public void IndexReturnsView()
     {
         Assert.IsType<ViewResult>(_controller.Index());
     }
 
     [Fact]
-    public void Privacy_ReturnsView()
+    public void PrivacyReturnsView()
     {
         Assert.IsType<ViewResult>(_controller.Privacy());
     }
 
     [Fact]
-    public void Error_NoCurrentActivity_UsesTraceIdentifierFromHttpContext()
+    public void ErrorNoCurrentActivityUsesTraceIdentifierFromHttpContext()
     {
         var httpContext = new DefaultHttpContext { TraceIdentifier = "trace-abc" };
         ControllerTestContext.AttachHttpContext(_controller, httpContext);
@@ -38,7 +44,7 @@ public class HomeControllerTests
     }
 
     [Fact]
-    public void Error_WithCurrentActivity_UsesActivityId()
+    public void ErrorWithCurrentActivityUsesActivityId()
     {
         ControllerTestContext.AttachHttpContext(_controller, new DefaultHttpContext { TraceIdentifier = "trace-fallback" });
 

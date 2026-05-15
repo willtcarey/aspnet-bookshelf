@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Bookshelf.Tests.Controllers;
 
-public class AdminCrudControllerTests : IDisposable
+public sealed class AdminCrudControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly TestAdminCrudController _controller;
@@ -22,7 +22,7 @@ public class AdminCrudControllerTests : IDisposable
         _controller = new TestAdminCrudController(_context);
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() { _controller.Dispose(); _context.Dispose(); GC.SuppressFinalize(this); }
 
     private async Task<Author> SeedAuthor(string name = "Charlie", string userId = "owner-1")
     {
@@ -33,7 +33,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_NoSort_UsesDefaultSort()
+    public async Task IndexNoSortUsesDefaultSort()
     {
         await SeedAuthor("Charlie");
         await SeedAuthor("Alpha");
@@ -45,7 +45,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_KnownSortAscending_OrdersAscending()
+    public async Task IndexKnownSortAscendingOrdersAscending()
     {
         await SeedAuthor("Charlie");
         await SeedAuthor("Alpha");
@@ -56,7 +56,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_KnownSortDescending_OrdersDescending()
+    public async Task IndexKnownSortDescendingOrdersDescending()
     {
         await SeedAuthor("Charlie");
         await SeedAuthor("Alpha");
@@ -67,7 +67,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Index_UnknownSort_FallsBackToDefault()
+    public async Task IndexUnknownSortFallsBackToDefault()
     {
         await SeedAuthor("Charlie");
         await SeedAuthor("Alpha");
@@ -78,7 +78,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Get_ReturnsViewWithEmptyForm()
+    public async Task CreateGetReturnsViewWithEmptyForm()
     {
         var view = Assert.IsType<ViewResult>(await _controller.Create());
         var vm = Assert.IsType<AdminAuthorFormViewModel>(view.Model);
@@ -86,7 +86,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_Valid_RedirectsAndPersists()
+    public async Task CreatePostValidRedirectsAndPersists()
     {
         var vm = new AdminAuthorFormViewModel { Name = "New", UserId = "owner-1" };
 
@@ -98,7 +98,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Create_Post_InvalidModelState_ReturnsViewWithoutPersisting()
+    public async Task CreatePostInvalidModelStateReturnsViewWithoutPersisting()
     {
         _controller.ModelState.AddModelError("Name", "required");
         var vm = new AdminAuthorFormViewModel();
@@ -111,19 +111,19 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Get_NullId_ReturnsNotFound()
+    public async Task EditGetNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Edit((int?)null));
     }
 
     [Fact]
-    public async Task Edit_Get_EntityMissing_ReturnsNotFound()
+    public async Task EditGetEntityMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Edit((int?)999));
     }
 
     [Fact]
-    public async Task Edit_Get_EntityFound_ReturnsPopulatedView()
+    public async Task EditGetEntityFoundReturnsPopulatedView()
     {
         var author = await SeedAuthor("X");
 
@@ -134,7 +134,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_RouteIdMismatch_ReturnsNotFound()
+    public async Task EditPostRouteIdMismatchReturnsNotFound()
     {
         var result = await _controller.Edit(id: 1, new AdminAuthorFormViewModel { Id = 2 });
 
@@ -142,7 +142,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_EntityMissing_ReturnsNotFound()
+    public async Task EditPostEntityMissingReturnsNotFound()
     {
         var result = await _controller.Edit(
             id: 999,
@@ -152,7 +152,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_Valid_PersistsAndRedirects()
+    public async Task EditPostValidPersistsAndRedirects()
     {
         var author = await SeedAuthor("Old");
 
@@ -166,7 +166,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_InvalidModelState_ReturnsViewWithoutPersisting()
+    public async Task EditPostInvalidModelStateReturnsViewWithoutPersisting()
     {
         var author = await SeedAuthor("Old");
         _controller.ModelState.AddModelError("Name", "required");
@@ -180,7 +180,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_ConcurrencyException_EntityDisappeared_ReturnsNotFound()
+    public async Task EditPostConcurrencyExceptionEntityDisappearedReturnsNotFound()
     {
         var dbName = Guid.NewGuid().ToString();
         using var setupContext = RepositoryTestContext.CreateDbContext(dbName);
@@ -199,7 +199,7 @@ public class AdminCrudControllerTests : IDisposable
             sideContext.Authors.Remove(existing!);
             await sideContext.SaveChangesAsync();
         };
-        var controller = new TestAdminCrudController(throwing);
+        using var controller = new TestAdminCrudController(throwing);
 
         var result = await controller.Edit(
             author.Id,
@@ -209,7 +209,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Edit_Post_ConcurrencyException_EntityStillExists_Rethrows()
+    public async Task EditPostConcurrencyExceptionEntityStillExistsRethrows()
     {
         var dbName = Guid.NewGuid().ToString();
         using var setupContext = RepositoryTestContext.CreateDbContext(dbName);
@@ -221,7 +221,7 @@ public class AdminCrudControllerTests : IDisposable
             dbName,
             factory: (options, storage) => new ThrowingApplicationDbContext(options, storage));
         throwing.ShouldThrowOnSave = true;
-        var controller = new TestAdminCrudController(throwing);
+        using var controller = new TestAdminCrudController(throwing);
 
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
             () => controller.Edit(
@@ -230,19 +230,19 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Delete_Get_NullId_ReturnsNotFound()
+    public async Task DeleteGetNullIdReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Delete(null));
     }
 
     [Fact]
-    public async Task Delete_Get_EntityMissing_ReturnsNotFound()
+    public async Task DeleteGetEntityMissingReturnsNotFound()
     {
         Assert.IsType<NotFoundResult>(await _controller.Delete(999));
     }
 
     [Fact]
-    public async Task Delete_Get_EntityFound_ReturnsViewWithEntity()
+    public async Task DeleteGetEntityFoundReturnsViewWithEntity()
     {
         var author = await SeedAuthor();
 
@@ -251,7 +251,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfirmed_EntityMissing_RedirectsWithoutDeleting()
+    public async Task DeleteConfirmedEntityMissingRedirectsWithoutDeleting()
     {
         var result = await _controller.DeleteConfirmed(999);
 
@@ -259,7 +259,7 @@ public class AdminCrudControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfirmed_EntityFound_DeletesAndRedirects()
+    public async Task DeleteConfirmedEntityFoundDeletesAndRedirects()
     {
         var author = await SeedAuthor();
 
@@ -283,7 +283,7 @@ public class AdminCrudControllerTests : IDisposable
         protected override IQueryable<Author> GetBaseQuery() => Context.Authors;
         protected override Dictionary<string, Expression<Func<Author, object?>>> SortMap => new()
         {
-            ["name"] = a => a.Name
+            ["NAME"] = a => a.Name
         };
         protected override Expression<Func<Author, object?>> DefaultSort => a => a.Name;
 
