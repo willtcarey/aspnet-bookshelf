@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Coverlet configuration for the Bookshelf test suite.
+
+  Goal: produce a coverage number that reflects hand-written C# behavior.
+  By default Coverlet instruments everything in the compiled DLL, which
+  includes Razor views (.cshtml templates compiled to C# by the Razor
+  compiler) and the Program.cs top-level-program state machine. Those are
+  testable only via integration tests (WebApplicationFactory) which we don't
+  ship today, so they drown out the meaningful number.
+
+  Excludes here keep the metric usable as a "did we cover the unit-testable
+  C# code" signal.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>[*]AspNetCoreGeneratedDocument.*,[*]Program,[Bookshelf]Bookshelf.Migrations.*</Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
