@@ -2,7 +2,6 @@ using Bookshelf.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text.Encodings.Web;
 
 namespace Bookshelf.TagHelpers;
 
@@ -30,8 +29,8 @@ public class FormFileTagHelper : FormTagHelperBase
     [HtmlAttributeName("upload-url")]
     public string UploadUrl { get; set; } = "/images/create";
 
-    public FormFileTagHelper(IHtmlGenerator generator, HtmlEncoder encoder, ImageStorage imageStorage)
-        : base(generator, encoder)
+    public FormFileTagHelper(IHtmlGenerator generator, ImageStorage imageStorage)
+        : base(generator)
     {
         _imageStorage = imageStorage;
     }
@@ -82,7 +81,7 @@ public class FormFileTagHelper : FormTagHelperBase
         output.Content.AppendHtml(validationTag);
     }
 
-    internal TagBuilder BuildPreviewContainer(string? existingPath)
+    private TagBuilder BuildPreviewContainer(string? existingPath)
     {
         var container = new TagBuilder("div");
         container.Attributes["data-upload-preview"] = string.Empty;
@@ -123,7 +122,7 @@ public class FormFileTagHelper : FormTagHelperBase
         return container;
     }
 
-    internal TagBuilder BuildFileInput()
+    private TagBuilder BuildFileInput()
     {
         var input = new TagBuilder("input");
         input.Attributes["type"] = "file";
@@ -138,7 +137,7 @@ public class FormFileTagHelper : FormTagHelperBase
         return input;
     }
 
-    internal TagBuilder BuildHiddenInput(string? existingPath)
+    private TagBuilder BuildHiddenInput(string? existingPath)
     {
         var input = new TagBuilder("input");
         input.Attributes["type"] = "hidden";
@@ -149,7 +148,7 @@ public class FormFileTagHelper : FormTagHelperBase
         return input;
     }
 
-    internal TagBuilder BuildHint(bool hidden)
+    private TagBuilder BuildHint(bool hidden)
     {
         var hint = new TagBuilder("label");
         hint.AddCssClass("label text-base-content/60");
@@ -172,6 +171,4 @@ public class FormFileTagHelper : FormTagHelperBase
         return error;
     }
 
-    // Required by the base class but unused — we override Process entirely.
-    protected internal override TagBuilder GenerateInput() => new("input");
 }

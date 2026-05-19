@@ -1,4 +1,3 @@
-using System.Text.Encodings.Web;
 using Bookshelf.TagHelpers;
 using Bookshelf.Tests.TestSupport;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -12,33 +11,24 @@ namespace Bookshelf.Tests.TagHelpers;
 public class FormCheckboxTagHelperTests
 {
     [Fact]
-    public void GenerateInputAppliesCheckboxCssClasses()
+    public void ProcessAppliesCheckboxCssClasses()
     {
         var helper = BuildHelper();
+        var context = new TagHelperContext(
+            "form-checkbox",
+            new TagHelperAttributeList(),
+            new Dictionary<object, object>(),
+            Guid.NewGuid().ToString("N"));
+        var output = new TagHelperOutput(
+            "form-checkbox",
+            new TagHelperAttributeList(),
+            (useCachedResult, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 
-        var input = helper.GenerateInput();
+        helper.Process(context, output);
 
-        Assert.Contains("checkbox", input.Attributes["class"], StringComparison.Ordinal);
-        Assert.Contains("checkbox-primary", input.Attributes["class"], StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void EncoderPropertyExposesInjectedEncoder()
-    {
-        var encoder = HtmlEncoder.Default;
-        var helper = new EncoderExposingHelper(Mock.Of<IHtmlGenerator>(), encoder);
-
-        Assert.Same(encoder, helper.GetEncoder());
-    }
-
-    private sealed class EncoderExposingHelper : FormTagHelperBase
-    {
-        public EncoderExposingHelper(IHtmlGenerator generator, HtmlEncoder encoder)
-            : base(generator, encoder) { }
-
-        public HtmlEncoder GetEncoder() => Encoder;
-
-        protected internal override TagBuilder GenerateInput() => new("input");
+        var rendered = output.Content.GetContent();
+        Assert.Contains("checkbox", rendered, StringComparison.Ordinal);
+        Assert.Contains("checkbox-primary", rendered, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -84,7 +74,7 @@ public class FormCheckboxTagHelperTests
         var provider = new EmptyModelMetadataProvider();
         var explorer = provider.GetModelExplorerForType(typeof(bool), model: false);
 
-        return new FormCheckboxTagHelper(generator.Object, HtmlEncoder.Default)
+        return new FormCheckboxTagHelper(generator.Object)
         {
             For = new ModelExpression("Active", explorer),
             ViewContext = TestViewContext.Create()

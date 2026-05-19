@@ -4,6 +4,7 @@ using Bookshelf.Tests.TestSupport;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Moq;
 
 namespace Bookshelf.Tests.TagHelpers;
@@ -11,62 +12,51 @@ namespace Bookshelf.Tests.TagHelpers;
 public class FormSelectTagHelperTests
 {
     [Fact]
-    public void GenerateInputNoPlaceholderDoesNotPrependPlaceholderOption()
+    public void ProcessNoPlaceholderDoesNotPrependPlaceholderOption()
     {
         var generatedSelect = new TagBuilder("select");
         var helper = BuildHelper(generatedSelect, placeholder: null, modelValue: 5);
 
-        helper.GenerateInput();
+        Process(helper);
 
         Assert.DoesNotContain("disabled", RenderInnerHtml(generatedSelect), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GenerateInputWithPlaceholderAndNonBlankModelPrependsButDoesNotSelectPlaceholder()
+    public void ProcessWithPlaceholderAndBlankModelPrependsAndSelectsPlaceholder()
     {
         var generatedSelect = new TagBuilder("select");
-        var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: 5);
+        var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: null);
 
-        helper.GenerateInput();
+        Process(helper);
 
         var html = RenderInnerHtml(generatedSelect);
         Assert.Contains("disabled", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("selected", html, StringComparison.Ordinal);
+        Assert.Contains("selected", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GenerateInputWithPlaceholderAndBlankModelPrependsAndSelectsPlaceholder()
+    public void ProcessWithPlaceholderAndZeroModelSelectsPlaceholder()
     {
         var generatedSelect = new TagBuilder("select");
-        var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: 0);
+        var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: "0");
 
-        helper.GenerateInput();
+        Process(helper);
 
         Assert.Contains("selected", RenderInnerHtml(generatedSelect), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShouldSelectPlaceholderModelIsNullOrWhitespaceReturnsTrue()
+    public void ProcessWithPlaceholderAndNonZeroStringModelDoesNotSelectPlaceholder()
     {
-        var helper = BuildHelper(new TagBuilder("select"), placeholder: "X", modelValue: null);
+        var generatedSelect = new TagBuilder("select");
+        var helper = BuildHelper(generatedSelect, placeholder: "Pick one", modelValue: "hello");
 
-        Assert.True(helper.ShouldSelectPlaceholder());
-    }
+        Process(helper);
 
-    [Fact]
-    public void ShouldSelectPlaceholderModelIsZeroReturnsTrue()
-    {
-        var helper = BuildHelper(new TagBuilder("select"), placeholder: "X", modelValue: "0");
-
-        Assert.True(helper.ShouldSelectPlaceholder());
-    }
-
-    [Fact]
-    public void ShouldSelectPlaceholderModelIsNonBlankNonZeroReturnsFalse()
-    {
-        var helper = BuildHelper(new TagBuilder("select"), placeholder: "X", modelValue: "hello");
-
-        Assert.False(helper.ShouldSelectPlaceholder());
+        var html = RenderInnerHtml(generatedSelect);
+        Assert.Contains("disabled", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("selected", html, StringComparison.Ordinal);
     }
 
     private static FormSelectTagHelper BuildHelper(
@@ -82,16 +72,41 @@ public class FormSelectTagHelperTests
                 It.IsAny<bool>(), It.IsAny<object?>()))
             .Returns(generatedSelect);
 
+        generator.Setup(g => g.GenerateLabel(
+                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
+                It.IsAny<string?>(), It.IsAny<object?>()))
+            .Returns(new TagBuilder("label"));
+
+        generator.Setup(g => g.GenerateValidationMessage(
+                It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<object?>()))
+            .Returns(new TagBuilder("span"));
+
         var modelType = modelValue?.GetType() ?? typeof(int?);
         var provider = new EmptyModelMetadataProvider();
         var explorer = provider.GetModelExplorerForType(modelType, modelValue);
 
-        return new FormSelectTagHelper(generator.Object, HtmlEncoder.Default)
+        return new FormSelectTagHelper(generator.Object)
         {
             For = new ModelExpression("Field", explorer),
             ViewContext = TestViewContext.Create(),
             Placeholder = placeholder
         };
+    }
+
+    private static void Process(FormSelectTagHelper helper)
+    {
+        var context = new TagHelperContext(
+            "form-select",
+            new TagHelperAttributeList(),
+            new Dictionary<object, object>(),
+            Guid.NewGuid().ToString("N"));
+        var output = new TagHelperOutput(
+            "form-select",
+            new TagHelperAttributeList(),
+            (useCachedResult, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+
+        helper.Process(context, output);
     }
 
     private static string RenderInnerHtml(TagBuilder tag)

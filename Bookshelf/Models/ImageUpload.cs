@@ -100,7 +100,7 @@ public class ImageUpload
         return _imageStorage.BuildUrl(path, width, height, format);
     }
 
-    internal async Task<ImageResult> GetOriginalAsync(string sourcePath)
+    private async Task<ImageResult> GetOriginalAsync(string sourcePath)
     {
         var stream = await _fileStorage.GetAsync(sourcePath);
         return stream is null
@@ -108,7 +108,7 @@ public class ImageUpload
             : new ImageStreamResult(stream, GetContentTypeFromPath(sourcePath));
     }
 
-    internal async Task<ImageResult> GetResizedAsync(
+    private async Task<ImageResult> GetResizedAsync(
         string sourcePath,
         int? width,
         int? height,
@@ -129,24 +129,24 @@ public class ImageUpload
         return new ImageStreamResult(resizedStream, format.ContentType);
     }
 
-    internal static bool IsValidDimension(int? value)
+    private static bool IsValidDimension(int? value)
     {
         return !value.HasValue || (value.Value >= 1 && value.Value <= MaxResizeDimension);
     }
 
-    internal static ImageFormat? ResolveFormat(string? format)
+    private static ImageFormat? ResolveFormat(string? format)
     {
         return string.IsNullOrWhiteSpace(format)
             ? WebpFormat
             : (Formats.TryGetValue(format.Trim(), out var imageFormat) ? imageFormat : null);
     }
 
-    internal static string GetContentTypeFromPath(string path)
+    private static string GetContentTypeFromPath(string path)
     {
         return ContentTypeProvider.TryGetContentType(path, out var contentType)
             ? contentType
             : "application/octet-stream";
     }
 
-    internal sealed record ImageFormat(string Name, string ContentType);
+    private sealed record ImageFormat(string Name, string ContentType);
 }

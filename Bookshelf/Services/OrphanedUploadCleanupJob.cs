@@ -85,7 +85,7 @@ public partial class OrphanedUploadCleanupJob
         return new OrphanedUploadCleanupResult(scannedCount, skippedRecentCount, deletedCount);
     }
 
-    internal TimeSpan ResolveGracePeriod()
+    private TimeSpan ResolveGracePeriod()
     {
         var configuredMinutes = _configuration.GetValue<int?>("FileStorage:CleanupGracePeriodMinutes");
         return configuredMinutes is > 0

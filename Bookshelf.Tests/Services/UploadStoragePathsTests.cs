@@ -1,4 +1,3 @@
-using Bookshelf.Services;
 using Bookshelf.Tests.TestSupport;
 
 namespace Bookshelf.Tests.Services;
@@ -167,20 +166,30 @@ public sealed class UploadStoragePathsTests : IDisposable
     }
 
     [Fact]
-    public void NormalizeUploadsPathBlankInputReturnsDefault()
+    public void ConstructorBlankUploadsPathUsesDefaultUploadsPath()
     {
-        Assert.Equal("uploads", UploadStoragePaths.NormalizeUploadsPath(null));
+        var paths = TestUploadPaths.Create(webRoot: _root, uploadsConfig: null);
+
+        Assert.Equal("uploads", paths.UploadsPath);
+        Assert.Equal("/uploads", paths.UploadRequestPath);
     }
 
     [Fact]
-    public void NormalizeUploadsPathOnlySlashesReturnsDefault()
+    public void ConstructorOnlySlashesUploadsPathUsesDefaultUploadsPath()
     {
-        Assert.Equal("uploads", UploadStoragePaths.NormalizeUploadsPath("///"));
+        var paths = TestUploadPaths.Create(webRoot: _root, uploadsConfig: "///");
+
+        Assert.Equal("uploads", paths.UploadsPath);
+        Assert.Equal("/uploads", paths.UploadRequestPath);
     }
 
     [Fact]
-    public void NormalizeUploadsPathStripsSlashesAndConvertsBackslashes()
+    public void ConstructorUploadsPathStripsSlashesAndConvertsBackslashes()
     {
-        Assert.Equal("media/files", UploadStoragePaths.NormalizeUploadsPath(@"\media\files\"));
+        var paths = TestUploadPaths.Create(webRoot: _root, uploadsConfig: @"\media\files\");
+
+        Assert.Equal("media/files", paths.UploadsPath);
+        Assert.Equal("/media/files", paths.UploadRequestPath);
+        Assert.Equal(Path.Combine(_root, "media", "files"), paths.UploadRootPath);
     }
 }

@@ -49,7 +49,7 @@ public class ImageSharpImageProcessor : IImageProcessor
         };
     }
 
-    internal static string NormalizeFormat(string? format)
+    private static string NormalizeFormat(string? format)
     {
         return format?.Trim().ToUpperInvariant() switch
         {

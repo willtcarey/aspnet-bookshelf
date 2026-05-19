@@ -9,8 +9,10 @@ namespace Bookshelf.Tests.Models;
 
 public sealed class ImageUploadInstanceTests : IDisposable
 {
-    private const string ValidKey = "11111111111111111111111111111111.png";
-    private const string StoredPath = "/uploads/11111111111111111111111111111111.png";
+    private const string ValidPngKey = "11111111111111111111111111111111.png";
+    private const string StoredPngPath = "/uploads/11111111111111111111111111111111.png";
+    private const string ValidUnknownKey = "22222222222222222222222222222222.zzzzzz";
+    private const string StoredUnknownPath = "/uploads/22222222222222222222222222222222.zzzzzz";
 
     private readonly string _root;
     private readonly UploadStoragePaths _paths;
@@ -102,17 +104,44 @@ public sealed class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAsyncNullKeyReturnsNotFound()
+    public async Task GetAsyncNullDimensionsReadsOriginalImage()
     {
-        var result = await _upload.GetAsync(null, null, null);
+        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
+        _storage.Setup(s => s.GetAsync(StoredPngPath)).ReturnsAsync(sourceStream);
+
+        var result = await _upload.GetAsync(ValidPngKey, null, null);
+
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Same(sourceStream, streamResult.Stream);
+        Assert.Equal("image/png", streamResult.ContentType);
+    }
+
+    [Fact]
+    public async Task GetAsyncNullDimensionsMissingOriginalReturnsNotFound()
+    {
+        _storage.Setup(s => s.GetAsync(StoredPngPath)).ReturnsAsync((Stream?)null);
+
+        var result = await _upload.GetAsync(ValidPngKey, null, null);
 
         Assert.IsType<ImageNotFoundResult>(result);
     }
 
     [Fact]
+    public async Task GetAsyncNullDimensionsUnknownExtensionUsesOctetStreamContentType()
+    {
+        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
+        _storage.Setup(s => s.GetAsync(StoredUnknownPath)).ReturnsAsync(sourceStream);
+
+        var result = await _upload.GetAsync(ValidUnknownKey, null, null);
+
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Equal("application/octet-stream", streamResult.ContentType);
+    }
+
+    [Fact]
     public async Task GetAsyncWidthInvalidReturnsError()
     {
-        var result = await _upload.GetAsync(ValidKey, 0, null);
+        var result = await _upload.GetAsync(ValidPngKey, 0, null);
 
         Assert.IsType<ImageErrorResult>(result);
     }
@@ -120,90 +149,26 @@ public sealed class ImageUploadInstanceTests : IDisposable
     [Fact]
     public async Task GetAsyncHeightInvalidReturnsError()
     {
-        var result = await _upload.GetAsync(ValidKey, null, 4001);
+        var result = await _upload.GetAsync(ValidPngKey, null, 4001);
 
         Assert.IsType<ImageErrorResult>(result);
     }
 
     [Fact]
-    public async Task GetAsyncNoDimensionsDelegatesToOriginal()
-    {
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
-        _storage.Setup(s => s.GetAsync(StoredPath)).ReturnsAsync(sourceStream);
-
-        var result = await _upload.GetAsync(ValidKey, null, null);
-
-        var streamResult = Assert.IsType<ImageStreamResult>(result);
-        Assert.Equal("image/png", streamResult.ContentType);
-    }
-
-    [Fact]
     public async Task GetAsyncUnsupportedFormatReturnsError()
     {
-        var result = await _upload.GetAsync(ValidKey, 100, null, format: "tiff");
+        var result = await _upload.GetAsync(ValidPngKey, 100, null, format: "tiff");
 
         var errorResult = Assert.IsType<ImageErrorResult>(result);
         Assert.Equal("Unsupported image format.", errorResult.Message);
     }
 
     [Fact]
-    public async Task GetAsyncValidParamsDelegatesToResize()
+    public async Task GetAsyncValidResizeReturnsWebpStream()
     {
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
-        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
-        _storage.Setup(s => s.GetAsync(StoredPath)).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 200, "webp"))
-            .ReturnsAsync(resizedStream);
+        var resizedStream = SetupResize(StoredPngPath, 100, 200, "webp");
 
-        var result = await _upload.GetAsync(ValidKey, 100, 200, format: "webp");
-
-        Assert.IsType<ImageStreamResult>(result);
-    }
-
-    [Fact]
-    public async Task GetOriginalAsyncStorageReturnsStreamReturnsStreamResult()
-    {
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
-        _storage.Setup(s => s.GetAsync("/uploads/cover.png")).ReturnsAsync(sourceStream);
-
-        var result = await _upload.GetOriginalAsync("/uploads/cover.png");
-
-        var streamResult = Assert.IsType<ImageStreamResult>(result);
-        Assert.Equal("image/png", streamResult.ContentType);
-    }
-
-    [Fact]
-    public async Task GetOriginalAsyncStorageReturnsNullReturnsNotFound()
-    {
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync((Stream?)null);
-
-        var result = await _upload.GetOriginalAsync("/uploads/cover.png");
-
-        Assert.IsType<ImageNotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task GetResizedAsyncSourceMissingReturnsNotFound()
-    {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync((Stream?)null);
-
-        var result = await _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format);
-
-        Assert.IsType<ImageNotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task GetResizedAsyncReturnsResizedStream()
-    {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
-        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized-bytes"));
-        _storage.Setup(s => s.GetAsync("/uploads/cover.png")).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 200, "webp"))
-            .ReturnsAsync(resizedStream);
-
-        var result = await _upload.GetResizedAsync("/uploads/cover.png", 100, 200, format);
+        var result = await _upload.GetAsync(ValidPngKey, 100, 200, format: "webp");
 
         var streamResult = Assert.IsType<ImageStreamResult>(result);
         Assert.Same(resizedStream, streamResult.Stream);
@@ -211,43 +176,87 @@ public sealed class ImageUploadInstanceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetResizedAsyncWidthNullDefaultsToMaxResizeDimension()
+    public async Task GetAsyncJpegFormatAliasUsesJpgProcessorFormat()
     {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
-        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), 4000, 200, "webp"))
-            .ReturnsAsync(resizedStream)
-            .Verifiable();
+        SetupResize(StoredPngPath, 100, 200, "jpg");
 
-        await _upload.GetResizedAsync("/uploads/cover.png", null, 200, format);
+        var result = await _upload.GetAsync(ValidPngKey, 100, 200, format: "jpeg");
 
-        _processor.Verify();
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Equal("image/jpeg", streamResult.ContentType);
+        _processor.Verify(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 200, "jpg"), Times.Once);
     }
 
     [Fact]
-    public async Task GetResizedAsyncHeightNullDefaultsToMaxResizeDimension()
+    public async Task GetAsyncPngFormatUsesPngContentType()
     {
-        var format = ImageUpload.ResolveFormat("webp")!;
-        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("src"));
-        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
-        _storage.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(sourceStream);
-        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 4000, "webp"))
-            .ReturnsAsync(resizedStream)
-            .Verifiable();
+        SetupResize(StoredPngPath, 100, 200, "png");
 
-        await _upload.GetResizedAsync("/uploads/cover.png", 100, null, format);
+        var result = await _upload.GetAsync(ValidPngKey, 100, 200, format: "png");
 
-        _processor.Verify();
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Equal("image/png", streamResult.ContentType);
+    }
+
+    [Fact]
+    public async Task GetAsyncBlankFormatDefaultsToWebp()
+    {
+        SetupResize(StoredPngPath, 100, 200, "webp");
+
+        var result = await _upload.GetAsync(ValidPngKey, 100, 200, format: "  ");
+
+        var streamResult = Assert.IsType<ImageStreamResult>(result);
+        Assert.Equal("image/webp", streamResult.ContentType);
+        _processor.Verify(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 200, "webp"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAsyncResizeSourceMissingReturnsNotFound()
+    {
+        _storage.Setup(s => s.GetAsync(StoredPngPath)).ReturnsAsync((Stream?)null);
+
+        var result = await _upload.GetAsync(ValidPngKey, 100, 200, format: "webp");
+
+        Assert.IsType<ImageNotFoundResult>(result);
+        _processor.Verify(p => p.ResizeAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAsyncResizeWidthNullDefaultsToMaxResizeDimension()
+    {
+        SetupResize(StoredPngPath, 4000, 200, "webp");
+
+        await _upload.GetAsync(ValidPngKey, null, 200, format: "webp");
+
+        _processor.Verify(p => p.ResizeAsync(It.IsAny<Stream>(), 4000, 200, "webp"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAsyncResizeHeightNullDefaultsToMaxResizeDimension()
+    {
+        SetupResize(StoredPngPath, 100, 4000, "webp");
+
+        await _upload.GetAsync(ValidPngKey, 100, null, format: "webp");
+
+        _processor.Verify(p => p.ResizeAsync(It.IsAny<Stream>(), 100, 4000, "webp"), Times.Once);
     }
 
     [Fact]
     public void BuildUrlDelegatesToImageStorage()
     {
-        var url = _upload.BuildUrl(StoredPath, 100, 200, "webp");
+        var url = _upload.BuildUrl(StoredPngPath, 100, 200, "webp");
 
-        Assert.Equal($"/images/{ValidKey}?w=100&h=200&format=webp", url);
+        Assert.Equal($"/images/{ValidPngKey}?w=100&h=200&format=webp", url);
+    }
+
+    private MemoryStream SetupResize(string storedPath, int width, int height, string format)
+    {
+        var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("source"));
+        var resizedStream = new MemoryStream(Encoding.UTF8.GetBytes("resized"));
+        _storage.Setup(s => s.GetAsync(storedPath)).ReturnsAsync(sourceStream);
+        _processor.Setup(p => p.ResizeAsync(It.IsAny<Stream>(), width, height, format))
+            .ReturnsAsync(resizedStream);
+        return resizedStream;
     }
 
     private static FormFile BuildFormFile(byte[] content, string fileName = "x.png", string contentType = "image/png")

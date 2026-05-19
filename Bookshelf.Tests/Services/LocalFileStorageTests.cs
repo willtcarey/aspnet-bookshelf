@@ -126,38 +126,29 @@ public sealed class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public void ResolveExtensionFilenameHasExtensionReturnsLowercaseExtension()
+    public async Task SaveAsyncFilenameHasExtensionReturnsLowercaseExtension()
     {
-        Assert.Equal(".webp", LocalFileStorage.ResolveExtension("cover.WEBP", "image/png"));
+        var result = await SaveAndReturnPath("cover.WEBP", "image/png");
+
+        Assert.Equal(".webp", Path.GetExtension(result));
     }
 
-    [Fact]
-    public void ResolveExtensionNoFilenameExtensionFallsBackToContentType()
+    [Theory]
+    [InlineData("image/jpeg", ".jpg")]
+    [InlineData("image/png", ".png")]
+    [InlineData("image/gif", ".gif")]
+    [InlineData("image/webp", ".webp")]
+    [InlineData("application/octet-stream", "")]
+    public async Task SaveAsyncNoFilenameExtensionFallsBackToContentType(string contentType, string expectedExtension)
     {
-        Assert.Equal(".jpg", LocalFileStorage.ResolveExtension("no-extension", "image/jpeg"));
+        var result = await SaveAndReturnPath("no-extension", contentType);
+
+        Assert.Equal(expectedExtension, Path.GetExtension(result));
     }
 
-    [Fact]
-    public void ResolveExtensionNoFilenameExtensionPngContentTypeReturnsPng()
+    private Task<string> SaveAndReturnPath(string fileName, string contentType)
     {
-        Assert.Equal(".png", LocalFileStorage.ResolveExtension("no-extension", "image/png"));
-    }
-
-    [Fact]
-    public void ResolveExtensionNoFilenameExtensionGifContentTypeReturnsGif()
-    {
-        Assert.Equal(".gif", LocalFileStorage.ResolveExtension("no-extension", "image/gif"));
-    }
-
-    [Fact]
-    public void ResolveExtensionNoFilenameExtensionWebpContentTypeReturnsWebp()
-    {
-        Assert.Equal(".webp", LocalFileStorage.ResolveExtension("no-extension", "image/webp"));
-    }
-
-    [Fact]
-    public void ResolveExtensionNoFilenameExtensionUnknownContentTypeReturnsEmpty()
-    {
-        Assert.Equal(string.Empty, LocalFileStorage.ResolveExtension("no-extension", "application/octet-stream"));
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes("payload"));
+        return _storage.SaveAsync(stream, fileName, contentType);
     }
 }

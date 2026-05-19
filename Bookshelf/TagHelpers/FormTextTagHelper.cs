@@ -1,20 +1,19 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text.Encodings.Web;
 
 namespace Bookshelf.TagHelpers;
 
 [HtmlTargetElement("form-text", Attributes = "asp-for")]
-public class FormTextTagHelper : FormTagHelperBase
+public class FormTextTagHelper : FormInputTagHelperBase
 {
     [HtmlAttributeName("type")]
     public string? InputType { get; set; }
 
-    public FormTextTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
-        : base(generator, encoder) { }
+    public FormTextTagHelper(IHtmlGenerator generator)
+        : base(generator) { }
 
-    protected internal override TagBuilder GenerateInput()
+    protected override TagBuilder GenerateInput()
     {
         var inputTag = Generator.GenerateTextBox(
             ViewContext, For.ModelExplorer, For.Name, For.Model,
@@ -24,7 +23,7 @@ public class FormTextTagHelper : FormTagHelperBase
         return inputTag;
     }
 
-    internal string ResolveInputType()
+    private string ResolveInputType()
     {
         if (!string.IsNullOrWhiteSpace(InputType))
         {
@@ -54,7 +53,7 @@ public class FormTextTagHelper : FormTagHelperBase
         typeof(decimal)
     };
 
-    internal static bool IsNumericType(Type type)
+    private static bool IsNumericType(Type type)
     {
         var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
         return NumericTypes.Contains(underlyingType);

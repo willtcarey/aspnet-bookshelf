@@ -1,4 +1,3 @@
-using System.Text.Encodings.Web;
 using Bookshelf.TagHelpers;
 using Bookshelf.Tests.TestSupport;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -13,136 +12,68 @@ namespace Bookshelf.Tests.TagHelpers;
 public class FormTextTagHelperTests
 {
     [Fact]
-    public void IsNumericTypeByteReturnsTrue()
+    public void ProcessExplicitInputTypeOverridesAll()
     {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(byte)));
+        var build = BuildHelper(modelType: typeof(int), explicitInputType: "search");
+
+        Process(build.Helper);
+
+        AssertGeneratedInputType(build, "search");
+    }
+
+    [Theory]
+    [InlineData("Password", "password")]
+    [InlineData("EmailAddress", "email")]
+    [InlineData("Url", "url")]
+    [InlineData("PhoneNumber", "tel")]
+    public void ProcessKnownDataTypeMapsToHtmlInputType(string dataTypeName, string expectedInputType)
+    {
+        var build = BuildHelper(modelType: typeof(string), dataTypeName: dataTypeName);
+
+        Process(build.Helper);
+
+        AssertGeneratedInputType(build, expectedInputType);
     }
 
     [Fact]
-    public void IsNumericTypeShortReturnsTrue()
+    public void ProcessNoExplicitNoDataTypeFallsBackToText()
     {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(short)));
+        var build = BuildHelper(modelType: typeof(string));
+
+        Process(build.Helper);
+
+        AssertGeneratedInputType(build, "text");
+    }
+
+    [Theory]
+    [MemberData(nameof(NumericModelTypes))]
+    public void ProcessNumericModelTypeFallsBackToNumber(Type modelType)
+    {
+        var build = BuildHelper(modelType: modelType);
+
+        Process(build.Helper);
+
+        AssertGeneratedInputType(build, "number");
     }
 
     [Fact]
-    public void IsNumericTypeIntReturnsTrue()
-    {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(int)));
-    }
-
-    [Fact]
-    public void IsNumericTypeLongReturnsTrue()
-    {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(long)));
-    }
-
-    [Fact]
-    public void IsNumericTypeFloatReturnsTrue()
-    {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(float)));
-    }
-
-    [Fact]
-    public void IsNumericTypeDoubleReturnsTrue()
-    {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(double)));
-    }
-
-    [Fact]
-    public void IsNumericTypeDecimalReturnsTrue()
-    {
-        Assert.True(FormTextTagHelper.IsNumericType(typeof(decimal)));
-    }
-
-    [Fact]
-    public void IsNumericTypeNonNumericReturnsFalse()
-    {
-        Assert.False(FormTextTagHelper.IsNumericType(typeof(string)));
-    }
-
-    [Fact]
-    public void ResolveInputTypeExplicitInputTypeOverridesAll()
-    {
-        var helper = BuildHelper(modelType: typeof(int), explicitInputType: "search");
-
-        Assert.Equal("search", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void ResolveInputTypeDataTypeIsKnownStringMapsToHtmlInputType()
-    {
-        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "EmailAddress");
-
-        Assert.Equal("email", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void ResolveInputTypeNoExplicitNoDataTypeFallsBackToText()
-    {
-        var helper = BuildHelper(modelType: typeof(string));
-
-        Assert.Equal("text", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void ResolveInputTypeDataTypeIsPasswordMapsToPassword()
-    {
-        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "Password");
-
-        Assert.Equal("password", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void ResolveInputTypeDataTypeIsUrlMapsToUrl()
-    {
-        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "Url");
-
-        Assert.Equal("url", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void ResolveInputTypeDataTypeIsPhoneNumberMapsToTel()
-    {
-        var helper = BuildHelper(modelType: typeof(string), dataTypeName: "PhoneNumber");
-
-        Assert.Equal("tel", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void ResolveInputTypeNumericModelTypeFallsBackToNumber()
-    {
-        var helper = BuildHelper(modelType: typeof(int));
-
-        Assert.Equal("number", helper.ResolveInputType());
-    }
-
-    [Fact]
-    public void GenerateInputAppliesInputCssClass()
+    public void ProcessAppliesInputCssClass()
     {
         var generatedInput = new TagBuilder("input");
-        var helper = BuildHelper(modelType: typeof(string), generatedInput: generatedInput);
+        var build = BuildHelper(modelType: typeof(string), generatedInput: generatedInput);
 
-        var result = helper.GenerateInput();
+        Process(build.Helper);
 
-        Assert.Contains("input", result.Attributes["class"], StringComparison.Ordinal);
-        Assert.Contains("w-full", result.Attributes["class"], StringComparison.Ordinal);
+        Assert.Contains("input", generatedInput.Attributes["class"], StringComparison.Ordinal);
+        Assert.Contains("w-full", generatedInput.Attributes["class"], StringComparison.Ordinal);
     }
 
     [Fact]
     public void ProcessRendersFieldsetWithLabelInputAndValidation()
     {
-        var helper = BuildHelper(modelType: typeof(string));
-        var context = new TagHelperContext(
-            "form-text",
-            new TagHelperAttributeList(),
-            new Dictionary<object, object>(),
-            Guid.NewGuid().ToString("N"));
-        var output = new TagHelperOutput(
-            "form-text",
-            new TagHelperAttributeList(),
-            (useCachedResult, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+        var build = BuildHelper(modelType: typeof(string));
 
-        helper.Process(context, output);
+        var output = Process(build.Helper);
 
         Assert.Equal("fieldset", output.TagName);
         Assert.Equal(TagMode.StartTagAndEndTag, output.TagMode);
@@ -153,13 +84,13 @@ public class FormTextTagHelperTests
     {
         // Exercises FormTagHelperBase.Process AND the default RenderContent
         // implementation (FormTextTagHelper doesn't override RenderContent).
-        var helper = BuildHelper(modelType: typeof(string));
+        var build = BuildHelper(modelType: typeof(string));
         var output = new TagHelperOutput(
             "form-text",
             new TagHelperAttributeList(),
             (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 
-        helper.Process(
+        build.Helper.Process(
             new TagHelperContext("form-text", new TagHelperAttributeList(), new Dictionary<object, object>(), "x"),
             output);
 
@@ -167,17 +98,32 @@ public class FormTextTagHelperTests
         Assert.Equal(TagMode.StartTagAndEndTag, output.TagMode);
     }
 
-    private static FormTextTagHelper BuildHelper(
+    public static TheoryData<Type> NumericModelTypes => new()
+    {
+        typeof(byte),
+        typeof(short),
+        typeof(int),
+        typeof(int?),
+        typeof(long),
+        typeof(float),
+        typeof(double),
+        typeof(decimal)
+    };
+
+    private static HelperBuildResult BuildHelper(
         Type modelType,
         string? dataTypeName = null,
         string? explicitInputType = null,
         TagBuilder? generatedInput = null)
     {
         var generator = new Mock<IHtmlGenerator>();
+        var capturedHtmlAttributes = (object?)null;
 
         generator.Setup(g => g.GenerateTextBox(
                 It.IsAny<ViewContext>(), It.IsAny<ModelExplorer>(), It.IsAny<string>(),
                 It.IsAny<object?>(), It.IsAny<string?>(), It.IsAny<object?>()))
+            .Callback<ViewContext, ModelExplorer, string, object?, string?, object?>(
+                (_, _, _, _, _, htmlAttributes) => capturedHtmlAttributes = htmlAttributes)
             .Returns(generatedInput ?? new TagBuilder("input"));
 
         generator.Setup(g => g.GenerateLabel(
@@ -190,12 +136,42 @@ public class FormTextTagHelperTests
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<object?>()))
             .Returns(new TagBuilder("span"));
 
-        return new FormTextTagHelper(generator.Object, HtmlEncoder.Default)
+        var helper = new FormTextTagHelper(generator.Object)
         {
             For = BuildModelExpression(modelType, dataTypeName),
             ViewContext = TestViewContext.Create(),
             InputType = explicitInputType
         };
+
+        return new HelperBuildResult(helper, () => capturedHtmlAttributes);
+    }
+
+    private static TagHelperOutput Process(FormTextTagHelper helper)
+    {
+        var context = new TagHelperContext(
+            "form-text",
+            new TagHelperAttributeList(),
+            new Dictionary<object, object>(),
+            Guid.NewGuid().ToString("N"));
+        var output = new TagHelperOutput(
+            "form-text",
+            new TagHelperAttributeList(),
+            (useCachedResult, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+
+        helper.Process(context, output);
+        return output;
+    }
+
+    private static void AssertGeneratedInputType(HelperBuildResult build, string expectedInputType)
+    {
+        var htmlAttributes = build.GetGeneratedHtmlAttributes();
+        Assert.NotNull(htmlAttributes);
+        Assert.Equal(expectedInputType, GetPropertyValue(htmlAttributes, "type"));
+    }
+
+    private static object? GetPropertyValue(object value, string propertyName)
+    {
+        return value.GetType().GetProperty(propertyName)?.GetValue(value);
     }
 
     private static ModelExpression BuildModelExpression(Type modelType, string? dataTypeName = null)
@@ -207,6 +183,10 @@ public class FormTextTagHelperTests
         var explorer = provider.GetModelExplorerForType(modelType, model: null);
         return new ModelExpression("Field", explorer);
     }
+
+    private sealed record HelperBuildResult(
+        FormTextTagHelper Helper,
+        Func<object?> GetGeneratedHtmlAttributes);
 
     private sealed class StubMetadataProvider : EmptyModelMetadataProvider
     {

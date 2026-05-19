@@ -70,6 +70,17 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
+    public async Task ResizeAsyncJpegAliasEncodesAsJpeg()
+    {
+        await using var source = await BuildPngStream(400, 200);
+
+        await using var resized = await _processor.ResizeAsync(source, 100, 100, "JPEG");
+
+        var info = await Image.IdentifyAsync(resized);
+        Assert.Equal("JPEG", info.Metadata.DecodedImageFormat?.Name);
+    }
+
+    [Fact]
     public async Task ResizeAsyncDefaultFormatEncodesAsWebp()
     {
         await using var source = await BuildPngStream(400, 200);
@@ -81,27 +92,25 @@ public class ImageSharpImageProcessorTests
     }
 
     [Fact]
-    public void NormalizeFormatKnownAliasReturnsCanonical()
+    public async Task ResizeAsyncUnknownFormatEncodesAsWebp()
     {
-        Assert.Equal("jpg", ImageSharpImageProcessor.NormalizeFormat("JPEG"));
+        await using var source = await BuildPngStream(400, 200);
+
+        await using var resized = await _processor.ResizeAsync(source, 100, 100, "tiff");
+
+        var info = await Image.IdentifyAsync(resized);
+        Assert.Equal("Webp", info.Metadata.DecodedImageFormat?.Name);
     }
 
     [Fact]
-    public void NormalizeFormatUnknownFormatReturnsWebpDefault()
+    public async Task ResizeAsyncNullFormatEncodesAsWebp()
     {
-        Assert.Equal("webp", ImageSharpImageProcessor.NormalizeFormat("tiff"));
-    }
+        await using var source = await BuildPngStream(400, 200);
 
-    [Fact]
-    public void NormalizeFormatNullFormatReturnsWebpDefault()
-    {
-        Assert.Equal("webp", ImageSharpImageProcessor.NormalizeFormat(null));
-    }
+        await using var resized = await _processor.ResizeAsync(source, 100, 100, null!);
 
-    [Fact]
-    public void NormalizeFormatJpgFormatReturnsJpg()
-    {
-        Assert.Equal("jpg", ImageSharpImageProcessor.NormalizeFormat("jpg"));
+        var info = await Image.IdentifyAsync(resized);
+        Assert.Equal("Webp", info.Metadata.DecodedImageFormat?.Name);
     }
 
     private static async Task<MemoryStream> BuildPngStream(int width, int height)

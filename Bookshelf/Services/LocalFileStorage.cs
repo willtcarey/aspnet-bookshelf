@@ -72,7 +72,7 @@ public class LocalFileStorage : IFileStorage
         return normalizedPath ?? string.Empty;
     }
 
-    internal static string ResolveExtension(string fileName, string contentType)
+    private static string ResolveExtension(string fileName, string contentType)
     {
         var extension = Path.GetExtension(Path.GetFileName(fileName));
         if (!string.IsNullOrWhiteSpace(extension))

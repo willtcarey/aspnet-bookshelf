@@ -1,14 +1,12 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text.Encodings.Web;
 
 namespace Bookshelf.TagHelpers;
 
 public abstract class FormTagHelperBase : TagHelper
 {
     protected IHtmlGenerator Generator { get; }
-    protected HtmlEncoder Encoder { get; }
 
     [HtmlAttributeNotBound]
     [ViewContext]
@@ -24,11 +22,16 @@ public abstract class FormTagHelperBase : TagHelper
     protected virtual string LabelClasses => "fieldset-legend";
     protected virtual string ValidationClasses => "label text-error";
 
-    protected FormTagHelperBase(IHtmlGenerator generator, HtmlEncoder encoder)
+    protected FormTagHelperBase(IHtmlGenerator generator)
     {
         Generator = generator;
-        Encoder = encoder;
     }
+}
+
+public abstract class FormInputTagHelperBase : FormTagHelperBase
+{
+    protected FormInputTagHelperBase(IHtmlGenerator generator)
+        : base(generator) { }
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
@@ -52,7 +55,7 @@ public abstract class FormTagHelperBase : TagHelper
         RenderContent(output, labelTag, inputTag, validationTag);
     }
 
-    protected internal abstract TagBuilder GenerateInput();
+    protected abstract TagBuilder GenerateInput();
 
     protected virtual void RenderContent(
         TagHelperOutput output, TagBuilder labelTag, TagBuilder inputTag, TagBuilder validationTag)

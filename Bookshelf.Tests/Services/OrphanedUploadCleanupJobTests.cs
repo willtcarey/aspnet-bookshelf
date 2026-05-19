@@ -105,19 +105,31 @@ public sealed class OrphanedUploadCleanupJobTests : IDisposable
     }
 
     [Fact]
-    public void ResolveGracePeriodConfiguredPositiveUsesConfiguredMinutes()
+    public async Task RunAsyncConfiguredPositiveGracePeriodDeletesFileOlderThanConfiguredCutoff()
     {
+        var stalePath = Path.Combine(_paths.UploadRootPath, "stale.png");
+        await File.WriteAllTextAsync(stalePath, "x");
+        File.SetLastWriteTimeUtc(stalePath, DateTime.UtcNow.AddMinutes(-10));
         var job = BuildJob(gracePeriodMinutes: 5);
 
-        Assert.Equal(TimeSpan.FromMinutes(5), job.ResolveGracePeriod());
+        var result = await job.RunAsync();
+
+        Assert.Equal(1, result.DeletedCount);
+        _storage.Verify(s => s.DeleteAsync($"{_paths.UploadRequestPath}/stale.png"), Times.Once);
     }
 
     [Fact]
-    public void ResolveGracePeriodConfiguredNonPositiveOrMissingReturnsDefault()
+    public async Task RunAsyncConfiguredNonPositiveGracePeriodUsesDefaultCutoff()
     {
+        var recentPath = Path.Combine(_paths.UploadRootPath, "recent-with-default.png");
+        await File.WriteAllTextAsync(recentPath, "x");
+        File.SetLastWriteTimeUtc(recentPath, DateTime.UtcNow.AddMinutes(-10));
         var job = BuildJob(gracePeriodMinutes: -5);
 
-        Assert.Equal(TimeSpan.FromHours(1), job.ResolveGracePeriod());
+        var result = await job.RunAsync();
+
+        Assert.Equal(1, result.SkippedRecentCount);
+        Assert.Equal(0, result.DeletedCount);
     }
 
     private OrphanedUploadCleanupJob BuildJob(int? gracePeriodMinutes = null)
