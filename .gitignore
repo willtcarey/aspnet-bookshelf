@@ -13,3 +13,7 @@ Bookshelf/wwwroot/uploads/
 
 ## Resized image cache
 Bookshelf/wwwroot/uploads/.cache/
+
+## Test coverage output
+Bookshelf.Tests/TestResults/
+Bookshelf.Tests/Coverage-*/

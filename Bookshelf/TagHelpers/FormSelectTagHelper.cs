@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text.Encodings.Web;
 
 namespace Bookshelf.TagHelpers;
 
 [HtmlTargetElement("form-select", Attributes = "asp-for")]
-public class FormSelectTagHelper : FormTagHelperBase
+public class FormSelectTagHelper : FormInputTagHelperBase
 {
     [HtmlAttributeName("asp-items")]
     public SelectList? Items { get; set; }
@@ -14,8 +13,8 @@ public class FormSelectTagHelper : FormTagHelperBase
     [HtmlAttributeName("placeholder")]
     public string? Placeholder { get; set; }
 
-    public FormSelectTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
-        : base(generator, encoder) { }
+    public FormSelectTagHelper(IHtmlGenerator generator)
+        : base(generator) { }
 
     protected override TagBuilder GenerateInput()
     {

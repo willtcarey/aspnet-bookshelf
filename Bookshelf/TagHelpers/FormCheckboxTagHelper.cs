@@ -1,18 +1,17 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text.Encodings.Web;
 
 namespace Bookshelf.TagHelpers;
 
 [HtmlTargetElement("form-checkbox", Attributes = "asp-for")]
-public class FormCheckboxTagHelper : FormTagHelperBase
+public class FormCheckboxTagHelper : FormInputTagHelperBase
 {
     protected override string WrapperClasses => "fieldset gap-2";
     protected override string LabelClasses => "text-sm font-medium text-base-content cursor-pointer";
 
-    public FormCheckboxTagHelper(IHtmlGenerator generator, HtmlEncoder encoder)
-        : base(generator, encoder) { }
+    public FormCheckboxTagHelper(IHtmlGenerator generator)
+        : base(generator) { }
 
     protected override TagBuilder GenerateInput()
     {

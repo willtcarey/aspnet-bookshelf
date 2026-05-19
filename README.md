@@ -40,3 +40,13 @@ Bookshelf lets users:
 - **Database:** PostgreSQL
 - **CSS:** Tailwind CSS + DaisyUI
 - **Containerization:** Docker & Docker Compose
+
+## Running tests
+
+Tests live in the `Bookshelf.Tests` project and run inside the `web` container via Dip so the toolchain matches dev and (eventually) CI.
+
+```sh
+dip test
+```
+
+That runs `dotnet test Bookshelf.Tests/Bookshelf.Tests.csproj` in the `web` container without starting dependencies.

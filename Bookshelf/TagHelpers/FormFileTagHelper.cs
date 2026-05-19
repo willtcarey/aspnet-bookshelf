@@ -2,7 +2,6 @@ using Bookshelf.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using System.Text.Encodings.Web;
 
 namespace Bookshelf.TagHelpers;
 
@@ -30,8 +29,8 @@ public class FormFileTagHelper : FormTagHelperBase
     [HtmlAttributeName("upload-url")]
     public string UploadUrl { get; set; } = "/images/create";
 
-    public FormFileTagHelper(IHtmlGenerator generator, HtmlEncoder encoder, ImageStorage imageStorage)
-        : base(generator, encoder)
+    public FormFileTagHelper(IHtmlGenerator generator, ImageStorage imageStorage)
+        : base(generator)
     {
         _imageStorage = imageStorage;
     }
@@ -172,6 +171,4 @@ public class FormFileTagHelper : FormTagHelperBase
         return error;
     }
 
-    // Required by the base class but unused — we override Process entirely.
-    protected override TagBuilder GenerateInput() => new("input");
 }
